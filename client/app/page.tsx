@@ -1,5 +1,7 @@
-import Image from "next/image";
-
-export default function Page() {
-  return <Image src="/profile.jpg" alt="Profile" width={100} height={100} />;
+export default function App() {
+  return (
+    <div>
+      <h1>hello</h1>
+    </div>
+  );
 }
