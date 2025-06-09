@@ -215,7 +215,7 @@ interface EnhancedTableProps {
   rowCount: number;
 }
 
-export function EnhancedTableHead(props: EnhancedTableProps) {
+function EnhancedTableHead(props: EnhancedTableProps) {
   const { order, orderBy, onRequestSort } = props;
   const createSortHandler =
     (property: keyof Employee) => (event: React.MouseEvent<unknown>) => {

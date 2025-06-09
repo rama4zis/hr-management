@@ -12,7 +12,7 @@ import { Box, Toolbar } from '@mui/material';
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en">
+    <html lang="en" suppressHydrationWarning>
       <body>
         <ThemeProvider theme={theme}>
           <CssBaseline />

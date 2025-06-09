@@ -56,7 +56,7 @@ const Sidebar = () => {
           </ListItemIcon>
           <ListItemText primary="Employees" />
         </ListItemButton>
-        <ListItemButton component={Link} href="/attendance">
+        <ListItemButton component={Link} href="/employees/attendance">
           <ListItemIcon>
             <EventIcon />
           </ListItemIcon>
