@@ -16,6 +16,7 @@ import DashboardIcon from "@mui/icons-material/Dashboard";
 import EventIcon from "@mui/icons-material/Event";
 import LogoutIcon from "@mui/icons-material/Logout";
 import Link from "next/link";
+import { EventAvailable, EventNote } from "@mui/icons-material";
 
 const drawerWidth = 240;
 
@@ -58,9 +59,15 @@ const Sidebar = () => {
         </ListItemButton>
         <ListItemButton component={Link} href="/employees/attendance">
           <ListItemIcon>
-            <EventIcon />
+            <EventAvailable />
           </ListItemIcon>
           <ListItemText primary="Attendance" />
+        </ListItemButton>
+        <ListItemButton component={Link} href="/employees/leave-requests">
+          <ListItemIcon>
+            <EventNote />
+          </ListItemIcon>
+          <ListItemText primary="Leave Requests" />
         </ListItemButton>
       </List>
       <Divider />
