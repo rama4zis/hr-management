@@ -1,9 +1,13 @@
 "use client";
 
 import {
+  Backdrop,
   Box,
+  Button,
   Container,
+  Fade,
   Input,
+  Modal,
   Pagination,
   Paper,
   Stack,
@@ -14,10 +18,12 @@ import {
   TableHead,
   TableRow,
   TableSortLabel,
+  Typography,
 } from "@mui/material";
 import { visuallyHidden } from "@mui/utils";
 import Image from "next/image";
 import React from "react";
+import AddEmployeeDialog from "./add-employee-dialog";
 
 interface Employee {
   id: number;
@@ -258,6 +264,22 @@ export default function Employees() {
   const [rowsPerPage, setRowsPerPage] = React.useState(5);
   const [searchTerm, setSearchTerm] = React.useState("");
 
+  const [isDialogOpen, setIsDialogOpen] = React.useState(false);
+  const handleDialogOpen = () => setIsDialogOpen(true);
+  const handleDialogClose = () => setIsDialogOpen(false);
+
+  const modalStyle = {
+    position: "absolute",
+    top: "50%",
+    left: "50%",
+    transform: "translate(-50%, -50%)",
+    // width: 400,
+    bgcolor: "background.paper",
+    border: "2px solid #000",
+    boxShadow: 24,
+    p: 4,
+  };
+
   const handleRequestSort = (
     event: React.MouseEvent<unknown>,
     property: keyof Employee
@@ -324,6 +346,51 @@ export default function Employees() {
 
   return (
     <Container>
+      <AddEmployeeDialog open={isDialogOpen} onClose={handleDialogClose} />
+      <div className="flex justify-end items-center">
+        <button
+          onClick={handleDialogOpen}
+          className="cursor-pointer bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-full my-4 transition duration-300 ease-in-out"
+        >
+          Add Employee
+        </button>
+      </div>
+      {/* button add employee */}
+      {/* <div className="flex justify-end items-center">
+        <button
+          onClick={handleModalOpen}
+          className="cursor-pointer bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-full my-4 transition duration-300 ease-in-out"
+        >
+          Add Employee
+        </button>
+      </div> */}
+
+      {/* Modal */}
+      {/* <Modal
+        aria-labelledby="transition-modal-title"
+        aria-describedby="transition-modal-description"
+        open={open}
+        onClose={handleModalClose}
+        closeAfterTransition
+        slots={{ backdrop: Backdrop }}
+        slotProps={{
+          backdrop: {
+            timeout: 500,
+          },
+        }}
+      >
+        <Fade in={open}>
+          <Box sx={modalStyle}>
+            <Typography id="transition-modal-title" variant="h6" component="h2">
+              Text in a modal
+            </Typography>
+            <Typography id="transition-modal-description" sx={{ mt: 2 }}>
+              Duis mollis, est non commodo luctus, nisi erat porttitor ligula.
+            </Typography>
+          </Box>
+        </Fade>
+      </Modal> */}
+
       {/* Search */}
       <div className="flex justify-center items-center">
         <input
