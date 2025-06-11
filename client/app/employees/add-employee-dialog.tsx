@@ -39,13 +39,15 @@ export default function AddEmployeeDialog({
             },
           },
         }}
+        className="border-2 border-gray-300 rounded-md"
+        
       >
         <DialogTitle>Add New Employee</DialogTitle>
         <DialogContent>
           <DialogContentText>
             Enter the details of the new employee. Click save when you're done.
           </DialogContentText>
-          <form action={"#"} method="post" encType="multipart/form-data">
+          <form method="post" encType="multipart/form-data">
             <div className="grid grid-cols-2 gap-4 items-center mt-4">
               <TextField
                 autoFocus

@@ -4,12 +4,15 @@ import {
   Backdrop,
   Box,
   Button,
+  ClickAwayListener,
   Container,
   Fade,
   Input,
+  MenuItem,
   Modal,
   Pagination,
   Paper,
+  Select,
   Stack,
   Table,
   TableBody,
@@ -24,6 +27,8 @@ import { visuallyHidden } from "@mui/utils";
 import Image from "next/image";
 import React from "react";
 import AddEmployeeDialog from "./add-employee-dialog";
+import { MoreHoriz } from "@mui/icons-material";
+import ViewEmployeeDetail from "./view-employee-dialog";
 
 interface Employee {
   id: number;
@@ -154,12 +159,6 @@ interface HeadCell {
 
 const headCells: readonly HeadCell[] = [
   {
-    id: "picture",
-    numeric: false,
-    disablePadding: true,
-    label: "Picture",
-  },
-  {
     id: "name",
     numeric: false,
     disablePadding: false,
@@ -230,6 +229,7 @@ function EnhancedTableHead(props: EnhancedTableProps) {
   return (
     <TableHead>
       <TableRow>
+        <TableCell>Picture</TableCell>
         {headCells.map((headCell) => (
           <TableCell
             key={headCell.id}
@@ -251,6 +251,7 @@ function EnhancedTableHead(props: EnhancedTableProps) {
             </TableSortLabel>
           </TableCell>
         ))}
+        <TableCell align="right">Actions</TableCell>
       </TableRow>
     </TableHead>
   );
@@ -267,6 +268,10 @@ export default function Employees() {
   const [isDialogOpen, setIsDialogOpen] = React.useState(false);
   const handleDialogOpen = () => setIsDialogOpen(true);
   const handleDialogClose = () => setIsDialogOpen(false);
+
+  const [openDetails, setOpenDetails] = React.useState(false);
+  const handleOpenDetails = () =>  setOpenDetails(true);
+  const handleCloseDetails = () => setOpenDetails(false);
 
   const modalStyle = {
     position: "absolute",
@@ -345,7 +350,8 @@ export default function Employees() {
   );
 
   return (
-    <Container>
+    <div className="mx-8 my-4">
+      
       <AddEmployeeDialog open={isDialogOpen} onClose={handleDialogClose} />
       <div className="flex justify-end items-center">
         <button
@@ -355,41 +361,6 @@ export default function Employees() {
           Add Employee
         </button>
       </div>
-      {/* button add employee */}
-      {/* <div className="flex justify-end items-center">
-        <button
-          onClick={handleModalOpen}
-          className="cursor-pointer bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-full my-4 transition duration-300 ease-in-out"
-        >
-          Add Employee
-        </button>
-      </div> */}
-
-      {/* Modal */}
-      {/* <Modal
-        aria-labelledby="transition-modal-title"
-        aria-describedby="transition-modal-description"
-        open={open}
-        onClose={handleModalClose}
-        closeAfterTransition
-        slots={{ backdrop: Backdrop }}
-        slotProps={{
-          backdrop: {
-            timeout: 500,
-          },
-        }}
-      >
-        <Fade in={open}>
-          <Box sx={modalStyle}>
-            <Typography id="transition-modal-title" variant="h6" component="h2">
-              Text in a modal
-            </Typography>
-            <Typography id="transition-modal-description" sx={{ mt: 2 }}>
-              Duis mollis, est non commodo luctus, nisi erat porttitor ligula.
-            </Typography>
-          </Box>
-        </Fade>
-      </Modal> */}
 
       {/* Search */}
       <div className="flex justify-center items-center">
@@ -427,19 +398,19 @@ export default function Employees() {
                   return (
                     <TableRow
                       hover
-                      onClick={(event) => handleClick(event, row.id)}
+                      // onClick={(event) => handleClick(event, row.id)}
                       role="checkbox"
                       aria-checked={isItemSelected}
                       tabIndex={-1}
                       key={row.id}
                       selected={isItemSelected}
-                      sx={{ cursor: "pointer" }}
+                      // sx={{ cursor: "pointer" }}
                     >
                       <TableCell
                         component="th"
                         id={labelId}
                         scope="row"
-                        padding="none"
+                        align="center"
                       >
                         <Image
                           src={row.picture}
@@ -458,6 +429,33 @@ export default function Employees() {
                       <TableCell align="right">{row.salary}</TableCell>
                       <TableCell align="left">{row.hireDate}</TableCell>
                       <TableCell align="left">{row.status}</TableCell>
+                      <TableCell align="center">
+                        
+                        <Select
+                          value=""
+                          displayEmpty
+                          inputProps={{ "aria-label": "Without label" }}
+                          size="small"
+                          variant="standard"
+                          disableUnderline
+                          IconComponent={MoreHoriz}
+                          sx={{
+                            "& .MuiSelect-icon": {
+                              color: "gray",
+                            },
+                          }}
+                        
+                        >
+                          {/* <MenuItem value="">
+                            <em>Actions</em>
+                          </MenuItem> */}
+                          
+                          <MenuItem value="view" onClick={handleOpenDetails}>View Details</MenuItem>
+                          <MenuItem value="edit">Edit Employee</MenuItem>
+                          {/* <MenuItem value="delete">Delete</MenuItem> */}
+                          
+                        </Select>
+                      </TableCell>
                     </TableRow>
                   );
                 })}
@@ -495,6 +493,7 @@ export default function Employees() {
           </div>
         </Paper>
       </Box>
-    </Container>
+      <ViewEmployeeDetail open={openDetails} onClose={handleCloseDetails} />
+    </div>
   );
 }
