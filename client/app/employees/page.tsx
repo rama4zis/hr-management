@@ -29,6 +29,7 @@ import React from "react";
 import AddEmployeeDialog from "./add-employee-dialog";
 import { MoreHoriz } from "@mui/icons-material";
 import ViewEmployeeDetail from "./view-employee-dialog";
+import EditEmployeeDialog from "./edit-employee-dialog";
 
 interface Employee {
   id: number;
@@ -273,6 +274,11 @@ export default function Employees() {
   const handleOpenDetails = () =>  setOpenDetails(true);
   const handleCloseDetails = () => setOpenDetails(false);
 
+  const [openEdit, setOpenEdit] = React.useState(false);
+  const handleOpenEdit = () =>  setOpenEdit(true);
+  const handleCloseEdit = () => setOpenEdit(false);
+
+
   const modalStyle = {
     position: "absolute",
     top: "50%",
@@ -451,7 +457,7 @@ export default function Employees() {
                           </MenuItem> */}
                           
                           <MenuItem value="view" onClick={handleOpenDetails}>View Details</MenuItem>
-                          <MenuItem value="edit">Edit Employee</MenuItem>
+                          <MenuItem value="edit" onClick={handleOpenEdit}>Edit Employee</MenuItem>
                           {/* <MenuItem value="delete">Delete</MenuItem> */}
                           
                         </Select>
@@ -494,6 +500,7 @@ export default function Employees() {
         </Paper>
       </Box>
       <ViewEmployeeDetail open={openDetails} onClose={handleCloseDetails} />
+      <EditEmployeeDialog open={openEdit} onClose={handleCloseEdit} />
     </div>
   );
 }
