@@ -1,6 +1,19 @@
 "use client";
 
-import { Description } from "@mui/icons-material";
+import {
+  Description,
+  Search,
+  FilterList,
+  Schedule,
+  CheckCircle,
+  Warning,
+  Cancel,
+  TrendingUp,
+  People,
+  AccessTime,
+  Person,
+  Edit
+} from "@mui/icons-material";
 import {
   Box,
   Container,
@@ -20,6 +33,16 @@ import {
   TableSortLabel,
   Toolbar,
   Typography,
+  Card,
+  CardContent,
+  Chip,
+  TextField,
+  Grid,
+  Avatar,
+  IconButton,
+  Tooltip,
+  Button,
+  Checkbox
 } from "@mui/material";
 import { visuallyHidden } from "@mui/utils";
 import { DemoContainer } from "@mui/x-date-pickers/internals/demo";
@@ -27,79 +50,48 @@ import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
 import { DatePicker } from "@mui/x-date-pickers/DatePicker";
 import Image from "next/image";
-import React, { useEffect } from "react";
-import { useState } from "react";
+import React, { useEffect, useState, useMemo } from "react";
 import dayjs, { Dayjs } from "dayjs";
+import { attendanceData } from "../../../data/attendance-data";
+import { employeesData } from "../../../data/employees-data";
+import EditAttendanceDialog from "./edit-attendance-dialog";
 
-interface Attendance {
+interface Data {
   id: number;
-  picture: string;
-  name: string;
-  departement: string;
+  employeeId: number;
+  employeeName: string;
   date: string;
-  timeIn: string;
-  timeOut: string;
+  clockIn: string;
+  clockOut: string | null;
+  totalHours: number | null;
   status: string;
 }
 
 function createAttendance(
   id: number,
-  picture: string,
-  name: string,
-  departement: string,
+  employeeId: number,
+  employeeName: string,
   date: string,
-  timeIn: string,
-  timeOut: string,
+  clockIn: string,
+  clockOut: string | null,
+  totalHours: number | null,
   status: string
-): Attendance {
-  return { id, picture, name, departement, date, timeIn, timeOut, status };
+): Data {
+  return { id, employeeId, employeeName, date, clockIn, clockOut, totalHours, status };
 }
-
-const attendanceData = [
-  {
-    id: 1,
-    picture: "/profile.jpg",
-    name: "John Doe",
-    departement: "IT",
-    date: "2023-10-27",
-    timeIn: "08:00",
-    timeOut: "17:00",
-    status: "Present",
-  },
-  {
-    id: 2,
-    picture: "/profile.jpg",
-    name: "Jane Smith",
-    departement: "HR",
-    date: "2023-10-27",
-    timeIn: "08:30",
-    timeOut: "17:30",
-    status: "Present",
-  },
-  {
-    id: 3,
-    picture: "/profile.jpg",
-    name: "Peter Jones",
-    departement: "IT",
-    date: "2023-10-27",
-    timeIn: "09:00",
-    timeOut: "18:00",
-    status: "Late",
-  },
-];
 
 let attendanceRows = [];
 for (const attendance of attendanceData) {
   attendanceRows.push(
     createAttendance(
       attendance.id,
-      attendance.picture,
-      attendance.name,
-      attendance.departement,
+      attendance.employeeId,
+      attendance.employeeName,
       attendance.date,
-      attendance.timeIn,
-      attendance.timeOut,
-      attendance.status
+      attendance.clockIn,
+      attendance.clockOut,
+      attendance.totalHours,
+      attendance.status,
     )
   );
 }
@@ -130,23 +122,17 @@ function getComparator<Key extends keyof any>(
 
 interface HeadCell {
   disablePadding: boolean;
-  id: keyof Attendance;
+  id: keyof Data;
   label: string;
   numeric: boolean;
 }
 
 const headCells: readonly HeadCell[] = [
-  { id: "picture", numeric: false, disablePadding: true, label: "Picture" },
-  { id: "name", numeric: false, disablePadding: false, label: "Name" },
-  {
-    id: "departement",
-    numeric: false,
-    disablePadding: false,
-    label: "Departement",
-  },
+  { id: "employeeName", numeric: false, disablePadding: false, label: "Employee" },
   { id: "date", numeric: false, disablePadding: false, label: "Date" },
-  { id: "timeIn", numeric: false, disablePadding: false, label: "Time In" },
-  { id: "timeOut", numeric: false, disablePadding: false, label: "Time Out" },
+  { id: "clockIn", numeric: false, disablePadding: false, label: "Clock In" },
+  { id: "clockOut", numeric: false, disablePadding: false, label: "Clock Out" },
+  { id: "totalHours", numeric: true, disablePadding: false, label: "Hours" },
   { id: "status", numeric: false, disablePadding: false, label: "Status" },
 ];
 
@@ -154,7 +140,7 @@ interface EnhancedTableProps {
   numSelected: number;
   onRequestSort: (
     event: React.MouseEvent<unknown>,
-    property: keyof Attendance
+    property: keyof Data
   ) => void;
   onSelectAllClick: (event: React.ChangeEvent<HTMLInputElement>) => void;
   order: Order;
@@ -165,18 +151,30 @@ interface EnhancedTableProps {
 export function EnhancedTableHead(props: EnhancedTableProps) {
   const { order, orderBy, onRequestSort } = props;
   const createSortHandler =
-    (property: keyof Attendance) => (event: React.MouseEvent<unknown>) => {
+    (property: keyof Data) => (event: React.MouseEvent<unknown>) => {
       onRequestSort(event, property);
     };
   return (
     <TableHead>
       <TableRow>
+        {/* <TableCell padding="checkbox">
+          <Checkbox
+            color="primary"
+            indeterminate={props.numSelected > 0 && props.numSelected < props.rowCount}
+            checked={props.rowCount > 0 && props.numSelected === props.rowCount}
+            onChange={props.onSelectAllClick}
+            inputProps={{
+              'aria-label': 'select all employees',
+            }}
+          />
+        </TableCell> */}
         {headCells.map((headCell) => (
           <TableCell
             key={headCell.id}
             align={headCell.numeric ? "right" : "left"}
             padding={headCell.disablePadding ? "none" : "normal"}
             sortDirection={orderBy === headCell.id ? order : false}
+            className="font-semibold"
           >
             <TableSortLabel
               active={orderBy === headCell.id}
@@ -192,25 +190,27 @@ export function EnhancedTableHead(props: EnhancedTableProps) {
             </TableSortLabel>
           </TableCell>
         ))}
+        <TableCell>Actions</TableCell>
       </TableRow>
     </TableHead>
   );
 }
 
-export default function attendance() {
+export default function Attendance() {
   const [order, setOrder] = React.useState<Order>("asc");
-  const [orderBy, setOrderBy] = React.useState<keyof Attendance>("name");
+  const [orderBy, setOrderBy] = React.useState<keyof Data>("date");
   const [selected, setSelected] = React.useState<readonly number[]>([]);
   const [page, setPage] = React.useState(0);
-  const [dense, setDense] = React.useState(false);
-  const [rowsPerPage, setRowsPerPage] = React.useState(5);
-  const [searchTerm, setSearchTerm] = React.useState("");
-  const [dateValue, setDateValue] = React.useState<Date | null>(null);
-  const [departement, setDepartement] = useState("");
+  const [rowsPerPage, setRowsPerPage] = React.useState(10);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [statusFilter, setStatusFilter] = useState("all");
+  const [dateFilter, setDateFilter] = useState<Dayjs | null>(null);
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
+  const [selectedAttendance, setSelectedAttendance] = useState<Data | undefined>();
 
   const handleRequestSort = (
     event: React.MouseEvent<unknown>,
-    property: keyof Attendance
+    property: keyof Data
   ) => {
     const isAsc = orderBy === property && order === "asc";
     setOrder(isAsc ? "desc" : "asc");
@@ -220,8 +220,6 @@ export default function attendance() {
   const handleSearch = (event: React.ChangeEvent<HTMLInputElement>) => {
     setSearchTerm(event.target.value);
     setPage(0);
-    console.log(searchTerm);
-    console.log("searchTerm");
   };
 
   const handleSelectAllClick = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -246,113 +244,242 @@ export default function attendance() {
 
   const isSelected = (id: number) => selected.indexOf(id) !== -1;
 
+  const handleEditAttendance = (attendance: Data) => {
+    setSelectedAttendance(attendance);
+    setEditDialogOpen(true);
+  };
+
+  const handleCloseEditDialog = () => {
+    setEditDialogOpen(false);
+    setSelectedAttendance(undefined);
+  };
+
+  // Filter and search functionality
+  const filteredRows = useMemo(() => {
+    return attendanceRows.filter((row) => {
+      const matchesSearch = row.employeeName.toLowerCase().includes(searchTerm.toLowerCase());
+      const matchesStatus = statusFilter === "all" || row.status === statusFilter;
+      
+      let matchesDate = true;
+      if (dateFilter) {
+        const rowDate = dayjs(row.date);
+        matchesDate = rowDate.isSame(dateFilter, 'day');
+      }
+      
+      return matchesSearch && matchesStatus && matchesDate;
+    });
+  }, [searchTerm, statusFilter, dateFilter]);
+
+  // Calculate statistics
+  const stats = useMemo(() => {
+    const totalRecords = attendanceData.length;
+    const presentCount = attendanceData.filter(record => record.status === "Present").length;
+    const absentCount = attendanceData.filter(record => record.status === "Absent").length;
+    const lateCount = attendanceData.filter(record => record.status === "Late").length;
+    const remoteCount = attendanceData.filter(record => record.status === "Remote").length;
+    const totalHours = attendanceData.reduce((acc, record) => acc + (record.totalHours || 0), 0);
+
+    return {
+      totalRecords,
+      presentCount,
+      absentCount,
+      lateCount,
+      remoteCount,
+      totalHours
+    };
+  }, []);
+
   // Avoid a layout jump when reaching the last page with empty rows.
   const emptyRows =
-    page > 0
-      ? Math.max(0, (1 + page) * rowsPerPage - attendanceRows.length)
-      : 0;
+    page > 0 ? Math.max(0, (1 + page) * rowsPerPage - filteredRows.length) : 0;
 
   const visibleRows = React.useMemo(
     () =>
-      attendanceRows
-        .filter((row) => {
-          const matchesSearch = Object.values(row).some((value) =>
-            String(value).toLowerCase().includes(searchTerm.toLowerCase())
-          );
-          const matchesDepartement = departement
-            ? row.departement === departement
-            : true;
-          const matchesDate = dateValue
-            ? dayjs(row.date).isSame(dayjs(dateValue), "day")
-            : true;
-          return matchesSearch && matchesDepartement && matchesDate;
-        })
+      filteredRows
+        .slice()
         .sort(getComparator(order, orderBy))
         .slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage),
-    [order, orderBy, page, rowsPerPage, searchTerm, departement, dateValue]
-
-    // () =>
-    //   attendanceRows
-    //     .filter((row) =>
-    //       Object.values(row).some((value) =>
-    //         String(value).toLowerCase().includes(searchTerm.toLowerCase())
-    //       )
-    //     )
-    //     .sort(getComparator(order, orderBy))
-    //     .slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage),
-    // [order, orderBy, page, rowsPerPage, searchTerm]
+    [order, orderBy, page, rowsPerPage, filteredRows]
   );
-  const handleChange = (event: SelectChangeEvent) => {
-    setDepartement(event.target.value as string);
+
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case 'Present': return 'success';
+      case 'Absent': return 'error';
+      case 'Late': return 'warning';
+      case 'Remote': return 'info';
+      case 'Half Day': return 'default';
+      default: return 'default';
+    }
   };
+
+  const getStatusIcon = (status: string) => {
+    switch (status) {
+      case 'Present': return <CheckCircle fontSize="small" />;
+      case 'Absent': return <Cancel fontSize="small" />;
+      case 'Late': return <Warning fontSize="small" />;
+      case 'Remote': return <AccessTime fontSize="small" />;
+      default: return <Schedule fontSize="small" />;
+    }
+  };
+
   return (
-    <Container className="">
-      {/* Heading */}
-      <div className="flex justify-items-center gap-2">
-        <Description />
-        <span className="heading text-xl font-bold ml-2">
-          Attendance History
-        </span>
+    <div className="p-6">
+      <div className="mb-6">
+        <h1 className="text-2xl font-bold text-gray-500">Attendance Management</h1>
+        <p className="text-sm text-gray-500 mt-1">Track and manage employee attendance</p>
       </div>
 
-      {/* Filter */}
-      <div className="flex justify-between items-center mt-4 mb-4">
-        <div className="flex justify-start items-center gap-4">
-          <FormControl sx={{ minWidth: 150 }}>
-            <InputLabel id="demo-simple-select-label">Departement</InputLabel>
-            <Select
-              labelId="demo-simple-select-label"
-              id="demo-simple-select"
-              value={departement}
-              label="Departement"
-              onChange={handleChange}
-            >
-              <MenuItem value="">
-                <em>None</em>
-              </MenuItem>
-              <MenuItem value={"IT"}>IT</MenuItem>
-              <MenuItem value={"HR"}>HR</MenuItem>
-              <MenuItem value={"MARKETING"}>Marketing</MenuItem>
-            </Select>
-          </FormControl>
-          <LocalizationProvider dateAdapter={AdapterDayjs}>
-            <DatePicker
-              label="Basic date picker"
-              onChange={(newValue: Dayjs) => {
-                setDateValue(newValue?.toDate());
-              }}
-              className="border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-            />
-          </LocalizationProvider>
-          {/* Button Show all */}
-          <button
-            className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
-            onClick={() => {
-              setDepartement("");
-              setDateValue(null);
-            }}
-          >
-            Show All
-          </button>
-        </div>
-        <input
-          type="text"
-          placeholder="Search attendance"
-          value={searchTerm}
-          onChange={handleSearch}
-          className="border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-        />
+      {/* Statistics Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+        <Card>
+          <CardContent>
+            <div className="flex justify-between items-center">
+              <div>
+                <Typography color="text.secondary" gutterBottom>
+                  Total Records
+                </Typography>
+                <Typography variant="h4" component="div" className="font-bold">
+                  {stats.totalRecords}
+                </Typography>
+                <Typography variant="body2" color="text.secondary">
+                  This Month
+                </Typography>
+              </div>
+              <Person className="text-blue-500" />
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardContent>
+            <div className="flex justify-between items-center">
+              <div>
+                <Typography color="text.secondary" gutterBottom>
+                  Present
+                </Typography>
+                <Typography variant="h4" component="div" className="font-bold text-green-600">
+                  {stats.presentCount}
+                </Typography>
+                <Typography variant="body2" color="text.secondary">
+                  On Time
+                </Typography>
+              </div>
+              <CheckCircle className="text-green-500" />
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardContent>
+            <div className="flex justify-between items-center">
+              <div>
+                <Typography color="text.secondary" gutterBottom>
+                  Late
+                </Typography>
+                <Typography variant="h4" component="div" className="font-bold text-orange-600">
+                  {stats.lateCount}
+                </Typography>
+                <Typography variant="body2" color="text.secondary">
+                  Delayed
+                </Typography>
+              </div>
+              <Warning className="text-orange-500" />
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardContent>
+            <div className="flex justify-between items-center">
+              <div>
+                <Typography color="text.secondary" gutterBottom>
+                  Total Hours
+                </Typography>
+                <Typography variant="h4" component="div" className="font-bold text-purple-600">
+                  {stats.totalHours.toFixed(1)}h
+                </Typography>
+                <Typography variant="body2" color="text.secondary">
+                  Worked
+                </Typography>
+              </div>
+              <TrendingUp className="text-purple-500" />
+            </div>
+          </CardContent>
+        </Card>
       </div>
 
-      {/* table */}
-      <Box sx={{ width: "100%" }}>
-        <Paper sx={{ width: "100%", mb: 2 }}>
-          <TableContainer className="p-4">
-            <Table
-              sx={{ minWidth: 750 }}
-              aria-labelledby="tableTitle"
-              size={dense ? "small" : "medium"}
+      {/* Search and Filters */}
+      <Card className="mb-6">
+        <CardContent>
+          <div className="flex flex-col md:flex-row gap-4 items-center justify-between">
+            <div className="flex gap-4 flex-1">
+              <TextField
+                label="Search employees"
+                variant="outlined"
+                size="small"
+                value={searchTerm}
+                onChange={handleSearch}
+                InputProps={{
+                  startAdornment: <Search className="text-gray-400 mr-2" />,
+                }}
+                className="flex-1"
+              />
+              
+              <FormControl size="small" className="min-w-32">
+                <InputLabel>Status</InputLabel>
+                <Select
+                  value={statusFilter}
+                  label="Status"
+                  onChange={(e) => setStatusFilter(e.target.value)}
+                >
+                  <MenuItem value="all">All Status</MenuItem>
+                  <MenuItem value="Present">Present</MenuItem>
+                  <MenuItem value="Absent">Absent</MenuItem>
+                  <MenuItem value="Late">Late</MenuItem>
+                  <MenuItem value="Remote">Remote</MenuItem>
+                  <MenuItem value="Half Day">Half Day</MenuItem>
+                </Select>
+              </FormControl>
+
+              <LocalizationProvider dateAdapter={AdapterDayjs}>
+                <DatePicker
+                  label="Filter by Date"
+                  value={dateFilter}
+                  onChange={(newValue) => setDateFilter(newValue)}
+                  slotProps={{
+                    textField: {
+                      size: "small",
+                      className: "min-w-40"
+                    }
+                  }}
+                />
+              </LocalizationProvider>
+            </div>
+
+            <Button 
+              variant="contained" 
+              startIcon={<FilterList />}
+              className="whitespace-nowrap"
             >
+              Export Report
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Results Summary */}
+      <div className="mb-4">
+        <Typography variant="body2" color="text.secondary">
+          Showing {visibleRows.length} of {filteredRows.length} attendance records
+        </Typography>
+      </div>
+
+      {/* Attendance Table */}
+      <Card>
+        <CardContent>
+          <TableContainer>
+            <Table>
               <EnhancedTableHead
                 numSelected={selected.length}
                 order={order}
@@ -368,45 +495,67 @@ export default function attendance() {
 
                   return (
                     <TableRow
-                      hover
                       role="checkbox"
                       aria-checked={isItemSelected}
                       tabIndex={-1}
                       key={row.id}
                       selected={isItemSelected}
-                      sx={{ cursor: "pointer" }}
                     >
-                      <TableCell align="left">
-                        <Image
-                          src={row.picture}
-                          alt="Profile"
-                          width={40}
-                          height={40}
-                          className="rounded-full"
+                      {/* <TableCell padding="checkbox">
+                        <Checkbox
+                          color="primary"
+                          checked={isItemSelected}
+                          inputProps={{
+                            'aria-labelledby': labelId,
+                          }}
+                        />
+                      </TableCell> */}
+                      <TableCell>
+                        <div className="flex items-center gap-2">
+                          <Avatar className="w-8 h-8">
+                            {row.employeeName.charAt(0)}
+                          </Avatar>
+                          <Typography variant="body2" className="font-medium">
+                            {row.employeeName}
+                          </Typography>
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <Typography variant="body2">
+                          {new Date(row.date).toLocaleDateString()}
+                        </Typography>
+                      </TableCell>
+                      <TableCell>
+                        <Typography variant="body2">{row.clockIn}</Typography>
+                      </TableCell>
+                      <TableCell>
+                        <Typography variant="body2">{row.clockOut || '-'}</Typography>
+                      </TableCell>
+                      <TableCell align="right">
+                        <Typography variant="body2">
+                          {row.totalHours ? `${row.totalHours}h` : '-'}
+                        </Typography>
+                      </TableCell>
+                      <TableCell>
+                        <Chip
+                          icon={getStatusIcon(row.status)}
+                          label={row.status}
+                          color={getStatusColor(row.status) as any}
+                          size="small"
+                          variant="outlined"
                         />
                       </TableCell>
-
-                      <TableCell
-                        component="th"
-                        id={labelId}
-                        scope="row"
-                        padding="none"
-                      >
-                        {row.name}
-                      </TableCell>
-                      <TableCell align="left">{row.departement}</TableCell>
-                      <TableCell align="left">{row.date}</TableCell>
-                      <TableCell align="left">{row.timeIn}</TableCell>
-                      <TableCell align="left">{row.timeOut}</TableCell>
-                      <TableCell align="left">
-                        <div
-                          className={`p-2 w-[60%] rounded-full text-center ${
-                            row.status === "Present"
-                              ? "bg-green-200 text-green-600"
-                              : "bg-red-200 text-red-600"
-                          }`}
-                        >
-                          {row.status}
+                      <TableCell>
+                        <div className="flex gap-1">
+                          <Tooltip title="Edit Attendance">
+                            <IconButton 
+                              size="small" 
+                              onClick={() => handleEditAttendance(row)}
+                            >
+                              <Edit />
+                            </IconButton>
+                          </Tooltip>
+                          
                         </div>
                       </TableCell>
                     </TableRow>
@@ -415,26 +564,95 @@ export default function attendance() {
                 {emptyRows > 0 && (
                   <TableRow
                     style={{
-                      height: (dense ? 33 : 53) * emptyRows,
+                      height: 53 * emptyRows,
                     }}
                   >
-                    <TableCell colSpan={6} />
+                    <TableCell colSpan={8} />
                   </TableRow>
                 )}
               </TableBody>
             </Table>
           </TableContainer>
-          <TablePagination
-            rowsPerPageOptions={[5, 10, 25]}
-            component="div"
-            count={attendanceRows.length}
-            rowsPerPage={rowsPerPage}
-            page={page}
-            onPageChange={handleChangePage}
-            onRowsPerPageChange={handleChangeRowsPerPage}
-          />
-        </Paper>
-      </Box>
-    </Container>
+
+          {visibleRows.length === 0 && (
+            <Box className="text-center py-8">
+              <Typography variant="body1" color="text.secondary">
+                No attendance records found matching your criteria
+              </Typography>
+            </Box>
+          )}
+        </CardContent>
+      </Card>
+
+      <TablePagination
+        rowsPerPageOptions={[5, 10, 25]}
+        component="div"
+        count={filteredRows.length}
+        rowsPerPage={rowsPerPage}
+        page={page}
+        onPageChange={handleChangePage}
+        onRowsPerPageChange={handleChangeRowsPerPage}
+      />
+
+      {/* Summary Statistics */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-6">
+        <Card>
+          <CardContent>
+            <Typography variant="h6" component="div" className="mb-4">
+              Attendance Summary
+            </Typography>
+            <div className="space-y-3">
+              <div className="flex justify-between">
+                <span className="text-sm text-gray-600">Present:</span>
+                <span className="font-medium text-green-600">{stats.presentCount}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-sm text-gray-600">Absent:</span>
+                <span className="font-medium text-red-600">{stats.absentCount}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-sm text-gray-600">Late:</span>
+                <span className="font-medium text-yellow-600">{stats.lateCount}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-sm text-gray-600">Remote:</span>
+                <span className="font-medium text-blue-600">{stats.remoteCount}</span>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardContent>
+            <Typography variant="h6" component="div" className="mb-4">
+              Work Hours Summary
+            </Typography>
+            <div className="space-y-3">
+              <div className="flex justify-between">
+                <span className="text-sm text-gray-600">Total Hours:</span>
+                <span className="font-medium">{stats.totalHours.toFixed(1)}h</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-sm text-gray-600">Average per Day:</span>
+                <span className="font-medium">{(stats.totalHours / stats.totalRecords).toFixed(1)}h</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-sm text-gray-600">Attendance Rate:</span>
+                <span className="font-medium text-green-600">
+                  {((stats.presentCount / stats.totalRecords) * 100).toFixed(1)}%
+                </span>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Edit Attendance Dialog */}
+      <EditAttendanceDialog
+        open={editDialogOpen}
+        onClose={handleCloseEditDialog}
+        attendance={selectedAttendance}
+      />
+    </div>
   );
 }

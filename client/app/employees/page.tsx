@@ -22,14 +22,34 @@ import {
   TableRow,
   TableSortLabel,
   Typography,
+  Card,
+  CardContent,
+  Chip,
+  IconButton,
+  Tooltip,
+  Avatar,
+  TextField,
+  Grid
 } from "@mui/material";
 import { visuallyHidden } from "@mui/utils";
 import Image from "next/image";
-import React from "react";
+import React, { useState, useMemo } from "react";
 import AddEmployeeDialog from "./add-employee-dialog";
-import { MoreHoriz } from "@mui/icons-material";
+import { 
+  MoreHoriz, 
+  Search, 
+  FilterList, 
+  Add, 
+  People, 
+  TrendingUp, 
+  AttachMoney,
+  Apartment
+} from "@mui/icons-material";
 import ViewEmployeeDetail from "./view-employee-dialog";
 import EditEmployeeDialog from "./edit-employee-dialog";
+import { employeesData } from "../../data/employees-data";
+import { departmentsData } from "../../data/departments-data";
+import { performanceData } from "../../data/performance-data";
 
 interface Employee {
   id: number;
@@ -69,45 +89,6 @@ function createData(
     status,
   };
 }
-
-const employeesData = [
-  {
-    id: 1,
-    picture: "/profile.jpg",
-    name: "John Doe",
-    email: "john.doe@example.com",
-    phone: "123-456-7890",
-    position: "Software Engineer",
-    department: "IT",
-    salary: 60000,
-    hireDate: "2023-01-15",
-    status: "Active",
-  },
-  {
-    id: 2,
-    picture: "/profile.jpg",
-    name: "Jane Smith",
-    email: "jane.smith@example.com",
-    phone: "987-654-3210",
-    position: "Project Manager",
-    department: "Management",
-    salary: 75000,
-    hireDate: "2023-02-01",
-    status: "Active",
-  },
-  {
-    id: 3,
-    picture: "/profile.jpg",
-    name: "Peter Jones",
-    email: "peter.jones@example.com",
-    phone: "555-123-4567",
-    position: "HR Specialist",
-    department: "Human Resources",
-    salary: 55000,
-    hireDate: "2023-03-10",
-    status: "Inactive",
-  },
-];
 
 let rows = [];
 for (const employee of employeesData) {
@@ -229,7 +210,7 @@ function EnhancedTableHead(props: EnhancedTableProps) {
     };
   return (
     <TableHead>
-      <TableRow>
+      <TableRow className="bg-gray-900">
         <TableCell>Picture</TableCell>
         {headCells.map((headCell) => (
           <TableCell
@@ -237,6 +218,7 @@ function EnhancedTableHead(props: EnhancedTableProps) {
             align={headCell.numeric ? "right" : "left"}
             padding={headCell.disablePadding ? "none" : "normal"}
             sortDirection={orderBy === headCell.id ? order : false}
+            className="font-semibold text-gray-700"
           >
             <TableSortLabel
               active={orderBy === headCell.id}
@@ -252,7 +234,7 @@ function EnhancedTableHead(props: EnhancedTableProps) {
             </TableSortLabel>
           </TableCell>
         ))}
-        <TableCell align="right">Actions</TableCell>
+        <TableCell>Actions</TableCell>
       </TableRow>
     </TableHead>
   );
@@ -263,33 +245,22 @@ export default function Employees() {
   const [orderBy, setOrderBy] = React.useState<keyof Employee>("name");
   const [selected, setSelected] = React.useState<readonly number[]>([]);
   const [page, setPage] = React.useState(0);
-  const [rowsPerPage, setRowsPerPage] = React.useState(5);
-  const [searchTerm, setSearchTerm] = React.useState("");
-
+  const [rowsPerPage, setRowsPerPage] = React.useState(10);
   const [isDialogOpen, setIsDialogOpen] = React.useState(false);
+  const [openDetails, setOpenDetails] = React.useState(false);
+  const [openEdit, setOpenEdit] = React.useState(false);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [departmentFilter, setDepartmentFilter] = useState("all");
+  const [statusFilter, setStatusFilter] = useState("all");
+
   const handleDialogOpen = () => setIsDialogOpen(true);
   const handleDialogClose = () => setIsDialogOpen(false);
 
-  const [openDetails, setOpenDetails] = React.useState(false);
-  const handleOpenDetails = () =>  setOpenDetails(true);
+  const handleOpenDetails = () => setOpenDetails(true);
   const handleCloseDetails = () => setOpenDetails(false);
 
-  const [openEdit, setOpenEdit] = React.useState(false);
-  const handleOpenEdit = () =>  setOpenEdit(true);
+  const handleOpenEdit = () => setOpenEdit(true);
   const handleCloseEdit = () => setOpenEdit(false);
-
-
-  const modalStyle = {
-    position: "absolute",
-    top: "50%",
-    left: "50%",
-    transform: "translate(-50%, -50%)",
-    // width: 400,
-    bgcolor: "background.paper",
-    border: "2px solid #000",
-    boxShadow: 24,
-    p: 4,
-  };
 
   const handleRequestSort = (
     event: React.MouseEvent<unknown>,
@@ -325,11 +296,12 @@ export default function Employees() {
         selected.slice(selectedIndex + 1)
       );
     }
+
     setSelected(newSelected);
   };
 
   const handleChangePage = (event: unknown, newPage: number) => {
-    setPage(newPage - 1);
+    setPage(newPage);
   };
 
   const handleSearch = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -339,55 +311,219 @@ export default function Employees() {
 
   const isSelected = (id: number) => selected.indexOf(id) !== -1;
 
+  // Filter and search functionality
+  const filteredRows = useMemo(() => {
+    return rows.filter((row) => {
+      const matchesSearch = 
+        row.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        row.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        row.position.toLowerCase().includes(searchTerm.toLowerCase());
+      
+      const matchesDepartment = departmentFilter === "all" || row.department === departmentFilter;
+      const matchesStatus = statusFilter === "all" || row.status === statusFilter;
+      
+      return matchesSearch && matchesDepartment && matchesStatus;
+    });
+  }, [searchTerm, departmentFilter, statusFilter]);
+
+  // Calculate statistics
+  const stats = useMemo(() => {
+    const totalEmployees = employeesData.length;
+    const activeEmployees = employeesData.filter(emp => emp.status === "Active").length;
+    const totalSalary = employeesData.reduce((acc, emp) => acc + emp.salary, 0);
+    const avgSalary = totalSalary / totalEmployees;
+    const departments = departmentsData.length;
+
+    return {
+      totalEmployees,
+      activeEmployees,
+      totalSalary,
+      avgSalary,
+      departments
+    };
+  }, []);
+
+  // Avoid a layout jump when reaching the last page with empty rows.
   const emptyRows =
-    page > 0 ? Math.max(0, (1 + page) * rowsPerPage - rows.length) : 0;
+    page > 0 ? Math.max(0, (1 + page) * rowsPerPage - filteredRows.length) : 0;
 
   const visibleRows = React.useMemo(
     () =>
-      rows
-        .filter((row) =>
-          Object.values(row).some((value) =>
-            String(value).toLowerCase().includes(searchTerm.toLowerCase())
-          )
-        )
+      filteredRows
+        .slice()
         .sort(getComparator(order, orderBy))
         .slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage),
-    [order, orderBy, page, rowsPerPage, searchTerm]
+    [order, orderBy, page, rowsPerPage, filteredRows]
   );
 
+  const formatCurrency = (amount: number) => {
+    return new Intl.NumberFormat('en-US', {
+      style: 'currency',
+      currency: 'USD',
+    }).format(amount);
+  };
+
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case 'Active': return 'success';
+      case 'Inactive': return 'error';
+      default: return 'default';
+    }
+  };
+
   return (
-    <div className="mx-8 my-4">
-      
-      <AddEmployeeDialog open={isDialogOpen} onClose={handleDialogClose} />
-      <div className="flex justify-end items-center">
-        <button
-          onClick={handleDialogOpen}
-          className="cursor-pointer bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-full my-4 transition duration-300 ease-in-out"
-        >
-          Add Employee
-        </button>
+    <div className="p-6">
+      <div className="mb-6">
+        <h1 className="text-2xl font-bold text-gray-900">Employee Management</h1>
+        <p className="text-sm text-gray-500 mt-1">Manage your organization's employees and their information</p>
       </div>
 
-      {/* Search */}
-      <div className="flex justify-center items-center">
-        <input
-          className="p-3 border border-gray-300 rounded-full focus:outline-none focus:ring-blue-500 focus:border-blue-500 w-1/2 my-4 transition duration-300 ease-in-out"
-          type="text"
-          placeholder="Search employees"
-          value={searchTerm}
-          onChange={handleSearch}
-          // sx={{ m: 2 }}
-        />
+      {/* Statistics Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+        <Card>
+          <CardContent>
+            <div className="flex justify-between items-center">
+              <div>
+                <Typography color="text.secondary" gutterBottom>
+                  Total Employees
+                </Typography>
+                <Typography variant="h4" component="div" className="font-bold">
+                  {stats.totalEmployees}
+                </Typography>
+                <Typography variant="body2" color="text.secondary">
+                  All Staff
+                </Typography>
+              </div>
+              <People className="text-blue-500" />
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardContent>
+            <div className="flex justify-between items-center">
+              <div>
+                <Typography color="text.secondary" gutterBottom>
+                  Active Employees
+                </Typography>
+                <Typography variant="h4" component="div" className="font-bold text-green-600">
+                  {stats.activeEmployees}
+                </Typography>
+                <Typography variant="body2" color="text.secondary">
+                  Currently Working
+                </Typography>
+              </div>
+              <TrendingUp className="text-green-500" />
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardContent>
+            <div className="flex justify-between items-center">
+              <div>
+                <Typography color="text.secondary" gutterBottom>
+                  Average Salary
+                </Typography>
+                <Typography variant="h4" component="div" className="font-bold">
+                  {formatCurrency(stats.avgSalary)}
+                </Typography>
+                <Typography variant="body2" color="text.secondary">
+                  Per Employee
+                </Typography>
+              </div>
+              <AttachMoney className="text-orange-500" />
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardContent>
+            <div className="flex justify-between items-center">
+              <div>
+                <Typography color="text.secondary" gutterBottom>
+                  Departments
+                </Typography>
+                <Typography variant="h4" component="div" className="font-bold">
+                  {stats.departments}
+                </Typography>
+                <Typography variant="body2" color="text.secondary">
+                  Active Teams
+                </Typography>
+              </div>
+              <Apartment className="text-purple-500" />
+            </div>
+          </CardContent>
+        </Card>
       </div>
 
-      <Box sx={{ width: "100%" }}>
-        <Paper sx={{ width: "100%", mb: 2 }}>
-          <TableContainer className="p-4">
-            <Table
-              sx={{ minWidth: 750 }}
-              aria-labelledby="tableTitle"
-              size="medium"
+      {/* Search and Filters */}
+      <Card className="mb-6">
+        <CardContent>
+          <div className="flex flex-col md:flex-row gap-4 items-center justify-between">
+            <div className="flex gap-4 flex-1">
+              <TextField
+                label="Search employees"
+                variant="outlined"
+                size="small"
+                value={searchTerm}
+                onChange={handleSearch}
+                InputProps={{
+                  startAdornment: <Search className="text-gray-400 mr-2" />,
+                }}
+                className="flex-1"
+              />
+              
+              <Select
+                value={departmentFilter}
+                onChange={(e) => setDepartmentFilter(e.target.value)}
+                size="small"
+                className="min-w-32"
+              >
+                <MenuItem value="all">All Departments</MenuItem>
+                {departmentsData.map((dept) => (
+                  <MenuItem key={dept.id} value={dept.name}>
+                    {dept.name}
+                  </MenuItem>
+                ))}
+              </Select>
+
+              <Select
+                value={statusFilter}
+                onChange={(e) => setStatusFilter(e.target.value)}
+                size="small"
+                className="min-w-32"
+              >
+                <MenuItem value="all">All Status</MenuItem>
+                <MenuItem value="Active">Active</MenuItem>
+                <MenuItem value="Inactive">Inactive</MenuItem>
+              </Select>
+            </div>
+
+            <Button 
+              variant="contained" 
+              startIcon={<Add />}
+              onClick={handleDialogOpen}
+              className="whitespace-nowrap"
             >
+              Add Employee
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Results Summary */}
+      <div className="mb-4">
+        <Typography variant="body2" color="text.secondary">
+          Showing {filteredRows.length} of {rows.length} employees
+        </Typography>
+      </div>
+
+      {/* Employee Table */}
+      <Card>
+        <CardContent>
+          <TableContainer>
+            <Table>
               <EnhancedTableHead
                 numSelected={selected.length}
                 order={order}
@@ -403,64 +539,60 @@ export default function Employees() {
 
                   return (
                     <TableRow
-                      hover
-                      // onClick={(event) => handleClick(event, row.id)}
                       role="checkbox"
                       aria-checked={isItemSelected}
                       tabIndex={-1}
                       key={row.id}
                       selected={isItemSelected}
-                      // sx={{ cursor: "pointer" }}
                     >
-                      <TableCell
-                        component="th"
-                        id={labelId}
-                        scope="row"
-                        align="center"
-                      >
-                        <Image
-                          src={row.picture}
-                          alt="Profile
-                          picture"
-                          width={40}
-                          height={40}
-                          className="rounded-full"
+                      <TableCell>
+                        <Avatar src={row.picture} alt={row.name}>
+                          {row.name.charAt(0)}
+                        </Avatar>
+                      </TableCell>
+                      <TableCell component="th" id={labelId} scope="row">
+                        <Typography variant="body2" className="font-medium">
+                          {row.name}
+                        </Typography>
+                      </TableCell>
+                      <TableCell>
+                        <Typography variant="body2">{row.email}</Typography>
+                      </TableCell>
+                      <TableCell>
+                        <Typography variant="body2">{row.phone}</Typography>
+                      </TableCell>
+                      <TableCell>
+                        <Typography variant="body2">{row.position}</Typography>
+                      </TableCell>
+                      <TableCell>
+                        <Typography variant="body2">{row.department}</Typography>
+                      </TableCell>
+                      <TableCell align="right">
+                        <Typography variant="body2" className="font-medium">
+                          {formatCurrency(row.salary)}
+                        </Typography>
+                      </TableCell>
+                      <TableCell>
+                        <Typography variant="body2">
+                          {new Date(row.hireDate).toLocaleDateString()}
+                        </Typography>
+                      </TableCell>
+                      <TableCell>
+                        <Chip
+                          label={row.status}
+                          color={getStatusColor(row.status) as any}
+                          size="small"
+                          variant="outlined"
                         />
                       </TableCell>
-                      <TableCell align="left">{row.name}</TableCell>
-                      <TableCell align="left">{row.email}</TableCell>
-                      <TableCell align="left">{row.phone}</TableCell>
-                      <TableCell align="left">{row.position}</TableCell>
-                      <TableCell align="left">{row.department}</TableCell>
-                      <TableCell align="right">{row.salary}</TableCell>
-                      <TableCell align="left">{row.hireDate}</TableCell>
-                      <TableCell align="left">{row.status}</TableCell>
-                      <TableCell align="center">
-                        
-                        <Select
-                          value=""
-                          displayEmpty
-                          inputProps={{ "aria-label": "Without label" }}
-                          size="small"
-                          variant="standard"
-                          disableUnderline
-                          IconComponent={MoreHoriz}
-                          sx={{
-                            "& .MuiSelect-icon": {
-                              color: "gray",
-                            },
-                          }}
-                        
-                        >
-                          {/* <MenuItem value="">
-                            <em>Actions</em>
-                          </MenuItem> */}
-                          
-                          <MenuItem value="view" onClick={handleOpenDetails}>View Details</MenuItem>
-                          <MenuItem value="edit" onClick={handleOpenEdit}>Edit Employee</MenuItem>
-                          {/* <MenuItem value="delete">Delete</MenuItem> */}
-                          
-                        </Select>
+                      <TableCell>
+                        <div className="flex gap-1">
+                          <Tooltip title="View Details">
+                            <IconButton size="small" onClick={handleOpenDetails}>
+                              <MoreHoriz />
+                            </IconButton>
+                          </Tooltip>
+                        </div>
                       </TableCell>
                     </TableRow>
                   );
@@ -471,34 +603,38 @@ export default function Employees() {
                       height: 53 * emptyRows,
                     }}
                   >
-                    <TableCell colSpan={6} />
+                    <TableCell colSpan={10} />
                   </TableRow>
                 )}
               </TableBody>
             </Table>
           </TableContainer>
 
-          {/* Pagination */}
-          <div className="flex justify-center items-center">
-            <Stack spacing={2} sx={{ p: 2 }}>
-              <Pagination
-                count={Math.ceil(
-                  rows.filter((row) =>
-                    Object.values(row).some((value) =>
-                      String(value)
-                        .toLowerCase()
-                        .includes(searchTerm.toLowerCase())
-                    )
-                  ).length / rowsPerPage
-                )}
-                page={page + 1}
-                onChange={handleChangePage}
-                color="primary"
-              />
-            </Stack>
-          </div>
-        </Paper>
+          {visibleRows.length === 0 && (
+            <Box className="text-center py-8">
+              <Typography variant="body1" color="text.secondary">
+                No employees found matching your criteria
+              </Typography>
+            </Box>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Pagination */}
+      <Box className="flex justify-between items-center mt-4">
+        <Typography variant="body2" color="text.secondary">
+          Showing {page * rowsPerPage + 1} to {Math.min((page + 1) * rowsPerPage, filteredRows.length)} of {filteredRows.length} results
+        </Typography>
+        <Pagination
+          count={Math.ceil(filteredRows.length / rowsPerPage)}
+          page={page + 1}
+          onChange={(e, newPage) => handleChangePage(e, newPage - 1)}
+          color="primary"
+        />
       </Box>
+
+      {/* Dialogs */}
+      <AddEmployeeDialog open={isDialogOpen} onClose={handleDialogClose} />
       <ViewEmployeeDetail open={openDetails} onClose={handleCloseDetails} />
       <EditEmployeeDialog open={openEdit} onClose={handleCloseEdit} />
     </div>
