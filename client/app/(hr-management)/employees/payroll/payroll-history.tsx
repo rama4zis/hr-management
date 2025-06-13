@@ -31,7 +31,7 @@ import {
   Grid
 } from "@mui/material";
 import React, { useState, useMemo } from "react";
-import { payrollData } from "../../../data/payroll-data";
+import { payrollData } from "../../../../data/payroll-data";
 
 export default function PayrollHistory() {
   const [searchTerm, setSearchTerm] = useState("");

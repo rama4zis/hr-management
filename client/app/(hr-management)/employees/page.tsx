@@ -47,9 +47,9 @@ import {
 } from "@mui/icons-material";
 import ViewEmployeeDetail from "./view-employee-dialog";
 import EditEmployeeDialog from "./edit-employee-dialog";
-import { employeesData } from "../../data/employees-data";
-import { departmentsData } from "../../data/departments-data";
-import { performanceData } from "../../data/performance-data";
+import { employeesData } from "../../../data/employees-data";
+import { departmentsData } from "../../../data/departments-data";
+import { performanceData } from "../../../data/performance-data";
 
 interface Employee {
   id: number;

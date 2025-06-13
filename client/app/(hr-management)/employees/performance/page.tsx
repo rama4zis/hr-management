@@ -35,8 +35,8 @@ import {
   Avatar
 } from "@mui/material";
 import React, { useState, useMemo } from "react";
-import { performanceData } from "../../../data/performance-data";
-import { employeesData } from "../../../data/employees-data";
+import { performanceData } from "../../../../data/performance-data";
+import { employeesData } from "../../../../data/employees-data";
 
 export default function Performance() {
   const [searchTerm, setSearchTerm] = useState("");

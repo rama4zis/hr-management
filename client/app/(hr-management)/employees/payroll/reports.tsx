@@ -25,9 +25,9 @@ import {
   Chip
 } from "@mui/material";
 import React, { useState, useMemo } from "react";
-import { payrollData } from "../../../data/payroll-data";
-import { employeesData } from "../../../data/employees-data";
-import { departmentsData } from "../../../data/departments-data";
+import { payrollData } from "../../../../data/payroll-data";
+import { employeesData } from "../../../../data/employees-data";
+import { departmentsData } from "../../../../data/departments-data";
 
 export default function Reports() {
   const [reportType, setReportType] = useState("summary");

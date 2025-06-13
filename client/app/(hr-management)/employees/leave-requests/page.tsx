@@ -36,8 +36,8 @@ import {
   TableRow
 } from "@mui/material";
 import React, { useState, useMemo } from "react";
-import { leaveRequestsData } from "../../../data/leave-requests-data";
-import { employeesData } from "../../../data/employees-data";
+import { leaveRequestsData } from "../../../../data/leave-requests-data";
+import { employeesData } from "../../../../data/employees-data";
 
 export default function LeaveRequest() {
   const [searchTerm, setSearchTerm] = useState("");

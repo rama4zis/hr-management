@@ -52,8 +52,8 @@ import { DatePicker } from "@mui/x-date-pickers/DatePicker";
 import Image from "next/image";
 import React, { useEffect, useState, useMemo } from "react";
 import dayjs, { Dayjs } from "dayjs";
-import { attendanceData } from "../../../data/attendance-data";
-import { employeesData } from "../../../data/employees-data";
+import { attendanceData } from "../../../../data/attendance-data";
+import { employeesData } from "../../../../data/employees-data";
 import EditAttendanceDialog from "./edit-attendance-dialog";
 
 interface Data {
@@ -272,20 +272,45 @@ export default function Attendance() {
 
   // Calculate statistics
   const stats = useMemo(() => {
-    const totalRecords = attendanceData.length;
-    const presentCount = attendanceData.filter(record => record.status === "Present").length;
-    const absentCount = attendanceData.filter(record => record.status === "Absent").length;
-    const lateCount = attendanceData.filter(record => record.status === "Late").length;
-    const remoteCount = attendanceData.filter(record => record.status === "Remote").length;
-    const totalHours = attendanceData.reduce((acc, record) => acc + (record.totalHours || 0), 0);
+    const totalRecordsThisMonth = attendanceData.filter(record => {
+      const recordDate = dayjs(record.date);
+      const today = dayjs();
+      return recordDate.isSame(today, 'month') && recordDate.isSame(today, 'year');
+    }).length;
+    
+    const presentCountToday = attendanceData.filter(record => {
+      const recordDate = dayjs(record.date);
+      const today = dayjs();
+      return recordDate.isSame(today, 'day') && record.status === "Present";
+    }).length;
+    const absentCountToday = attendanceData.filter(record => {
+      const recordDate = dayjs(record.date);
+      const today = dayjs();
+      return recordDate.isSame(today, 'day') && record.status === "Absent";
+    }).length;
+    const lateCountToday = attendanceData.filter(record => {
+      const recordDate = dayjs(record.date);
+      const today = dayjs();
+      return recordDate.isSame(today, 'day') && record.status === "Late";
+    }).length;
+    const remoteCountToday = attendanceData.filter(record => {
+      const recordDate = dayjs(record.date);
+      const today = dayjs();
+      return recordDate.isSame(today, 'day') && record.status === "Remote";
+    }).length;
+    const totalHoursToday =  attendanceData.filter(record => {
+      const recordDate = dayjs(record.date);
+      const today = dayjs();
+      return recordDate.isSame(today, 'day') && record.totalHours !== null;
+    }).reduce((sum, record) => sum + (record.totalHours || 0), 0);
 
     return {
-      totalRecords,
-      presentCount,
-      absentCount,
-      lateCount,
-      remoteCount,
-      totalHours
+      totalRecordsThisMonth,
+      presentCountToday,
+      absentCountToday,
+      lateCountToday,
+      remoteCountToday,
+      totalHoursToday
     };
   }, []);
 
@@ -340,7 +365,7 @@ export default function Attendance() {
                   Total Records
                 </Typography>
                 <Typography variant="h4" component="div" className="font-bold">
-                  {stats.totalRecords}
+                  {stats.totalRecordsThisMonth}
                 </Typography>
                 <Typography variant="body2" color="text.secondary">
                   This Month
@@ -359,7 +384,7 @@ export default function Attendance() {
                   Present
                 </Typography>
                 <Typography variant="h4" component="div" className="font-bold text-green-600">
-                  {stats.presentCount}
+                  {stats.presentCountToday}
                 </Typography>
                 <Typography variant="body2" color="text.secondary">
                   On Time
@@ -378,7 +403,7 @@ export default function Attendance() {
                   Late
                 </Typography>
                 <Typography variant="h4" component="div" className="font-bold text-orange-600">
-                  {stats.lateCount}
+                  {stats.lateCountToday}
                 </Typography>
                 <Typography variant="body2" color="text.secondary">
                   Delayed
@@ -397,7 +422,7 @@ export default function Attendance() {
                   Total Hours
                 </Typography>
                 <Typography variant="h4" component="div" className="font-bold text-purple-600">
-                  {stats.totalHours.toFixed(1)}h
+                  {stats.totalHoursToday.toFixed(1)}h
                 </Typography>
                 <Typography variant="body2" color="text.secondary">
                   Worked
@@ -593,59 +618,6 @@ export default function Attendance() {
         onPageChange={handleChangePage}
         onRowsPerPageChange={handleChangeRowsPerPage}
       />
-
-      {/* Summary Statistics */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-6">
-        <Card>
-          <CardContent>
-            <Typography variant="h6" component="div" className="mb-4">
-              Attendance Summary
-            </Typography>
-            <div className="space-y-3">
-              <div className="flex justify-between">
-                <span className="text-sm text-gray-600">Present:</span>
-                <span className="font-medium text-green-600">{stats.presentCount}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-sm text-gray-600">Absent:</span>
-                <span className="font-medium text-red-600">{stats.absentCount}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-sm text-gray-600">Late:</span>
-                <span className="font-medium text-yellow-600">{stats.lateCount}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-sm text-gray-600">Remote:</span>
-                <span className="font-medium text-blue-600">{stats.remoteCount}</span>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardContent>
-            <Typography variant="h6" component="div" className="mb-4">
-              Work Hours Summary
-            </Typography>
-            <div className="space-y-3">
-              <div className="flex justify-between">
-                <span className="text-sm text-gray-600">Total Hours:</span>
-                <span className="font-medium">{stats.totalHours.toFixed(1)}h</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-sm text-gray-600">Average per Day:</span>
-                <span className="font-medium">{(stats.totalHours / stats.totalRecords).toFixed(1)}h</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-sm text-gray-600">Attendance Rate:</span>
-                <span className="font-medium text-green-600">
-                  {((stats.presentCount / stats.totalRecords) * 100).toFixed(1)}%
-                </span>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
 
       {/* Edit Attendance Dialog */}
       <EditAttendanceDialog

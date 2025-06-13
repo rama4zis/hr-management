@@ -35,14 +35,14 @@ const Sidebar = () => {
     >
       <Toolbar />
       {/* Give label Employees section */}
-      <List>
+      {/* <List>
         <ListItemButton>
           <ListItemIcon>
             <DashboardIcon />
           </ListItemIcon>
           <ListItemText primary="Dashboard" />
         </ListItemButton>
-      </List>
+      </List> */}
 
       <List
         subheader={
@@ -79,11 +79,11 @@ const Sidebar = () => {
       <Divider />
       <nav aria-label="secondary mailbox folders">
         <List>
-          <ListItem disablePadding>
+          {/* <ListItem disablePadding>
             <ListItemButton>
               <ListItemText primary="Trash" />
             </ListItemButton>
-          </ListItem>
+          </ListItem> */}
           <ListItem disablePadding>
             <ListItemButton component="a" href="/logout">
               <ListItemText primary="Logout" />
