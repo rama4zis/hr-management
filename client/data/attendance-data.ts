@@ -24,7 +24,12 @@ export const attendanceData: Attendance[] = [
   { id: 12, employeeId: 6, employeeName: "Lisa Thompson", date: "2024-01-15", clockIn: "08:30", clockOut: "17:30", totalHours: 9.0, status: "Present" },
   { id: 13, employeeId: 6, employeeName: "Lisa Thompson", date: "2024-01-16", clockIn: "08:45", clockOut: "17:15", totalHours: 8.5, status: "Present" },
   { id: 14, employeeId: 7, employeeName: "Robert Kim", date: "2024-01-15", clockIn: "09:00", clockOut: "17:00", totalHours: 8.0, status: "Remote" },
-  { id: 15, employeeId: 7, employeeName: "Robert Kim", date: "2024-01-16", clockIn: "08:30", clockOut: "17:30", totalHours: 9.0, status: "Present" }
+  { id: 15, employeeId: 7, employeeName: "Robert Kim", date: "2024-01-16", clockIn: "08:30", clockOut: "17:30", totalHours: 9.0, status: "Present" },
+
+  { id: 16, employeeId: 1, employeeName: "John Doe", date: "2025-06-12", clockIn: "09:00", clockOut: "17:30", totalHours: 8.5, status: "Present" },
+  { id: 17, employeeId: 1, employeeName: "John Doe", date: "2025-06-13", clockIn: "09:00", clockOut: "17:30", totalHours: 8.5, status: "Present" },
+  { id: 18, employeeId: 1, employeeName: "John Doe", date: "2025-06-14", clockIn: "09:00", clockOut: "17:30", totalHours: 8.5, status: "Present" },
+
 ];
 
 export default attendanceData; 

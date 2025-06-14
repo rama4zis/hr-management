@@ -55,6 +55,7 @@ import dayjs, { Dayjs } from "dayjs";
 import { attendanceData } from "../../../../data/attendance-data";
 import { employeesData } from "../../../../data/employees-data";
 import EditAttendanceDialog from "./edit-attendance-dialog";
+import ExportEmployeesAttendance from "../export-employees-attendance";
 
 interface Data {
   id: number;
@@ -263,7 +264,7 @@ export default function Attendance() {
       let matchesDate = true;
       if (dateFilter) {
         const rowDate = dayjs(row.date);
-        matchesDate = rowDate.isSame(dateFilter, 'day');
+        matchesDate = rowDate.isSame(dateFilter, 'month') && rowDate.isSame(dateFilter, 'year');
       }
       
       return matchesSearch && matchesStatus && matchesDate;
@@ -469,8 +470,9 @@ export default function Attendance() {
 
               <LocalizationProvider dateAdapter={AdapterDayjs}>
                 <DatePicker
-                  label="Filter by Date"
+                  label="Filter by Month"
                   value={dateFilter}
+                  views={['month', 'year']}
                   onChange={(newValue) => setDateFilter(newValue)}
                   slotProps={{
                     textField: {
@@ -486,6 +488,7 @@ export default function Attendance() {
               variant="contained" 
               startIcon={<FilterList />}
               className="whitespace-nowrap"
+              onClick={() => ExportEmployeesAttendance(filteredRows)}
             >
               Export Report
             </Button>

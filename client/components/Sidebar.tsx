@@ -12,9 +12,6 @@ import {
   Toolbar,
 } from "@mui/material";
 import PeopleIcon from "@mui/icons-material/People";
-import DashboardIcon from "@mui/icons-material/Dashboard";
-import EventIcon from "@mui/icons-material/Event";
-import LogoutIcon from "@mui/icons-material/Logout";
 import Link from "next/link";
 import { EventAvailable, EventNote, Payment } from "@mui/icons-material";
 
@@ -34,15 +31,6 @@ const Sidebar = () => {
       }}
     >
       <Toolbar />
-      {/* Give label Employees section */}
-      {/* <List>
-        <ListItemButton>
-          <ListItemIcon>
-            <DashboardIcon />
-          </ListItemIcon>
-          <ListItemText primary="Dashboard" />
-        </ListItemButton>
-      </List> */}
 
       <List
         subheader={
@@ -79,11 +67,6 @@ const Sidebar = () => {
       <Divider />
       <nav aria-label="secondary mailbox folders">
         <List>
-          {/* <ListItem disablePadding>
-            <ListItemButton>
-              <ListItemText primary="Trash" />
-            </ListItemButton>
-          </ListItem> */}
           <ListItem disablePadding>
             <ListItemButton component="a" href="/logout">
               <ListItemText primary="Logout" />
