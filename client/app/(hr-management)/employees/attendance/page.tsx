@@ -55,7 +55,7 @@ import dayjs, { Dayjs } from "dayjs";
 import { attendanceData } from "../../../../data/attendance-data";
 import { employeesData } from "../../../../data/employees-data";
 import EditAttendanceDialog from "./edit-attendance-dialog";
-import ExportEmployeesAttendance from "../export-employees-attendance";
+import ExportEmployeesAttendance from "./export-employees-attendance";
 
 interface Data {
   id: number;

@@ -43,7 +43,8 @@ import {
   People, 
   TrendingUp, 
   AttachMoney,
-  Apartment
+  Apartment,
+  Description
 } from "@mui/icons-material";
 import ViewEmployeeDetail from "./view-employee-dialog";
 import EditEmployeeDialog from "./edit-employee-dialog";
@@ -507,6 +508,14 @@ export default function Employees() {
               className="whitespace-nowrap"
             >
               Add Employee
+            </Button>
+            <Button 
+              variant="contained" 
+              startIcon={<Description />}
+              
+              className="whitespace-nowrap"
+            >
+              Export data
             </Button>
           </div>
         </CardContent>
