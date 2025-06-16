@@ -38,6 +38,7 @@ import {
 import React, { useState, useMemo } from "react";
 import { leaveRequestsData } from "../../../../data/leave-requests-data";
 import { employeesData } from "../../../../data/employees-data";
+import ExportEmployeesLeaveRequest from "./export-employees-leave-request";
 
 export default function LeaveRequest() {
   const [searchTerm, setSearchTerm] = useState("");
@@ -229,6 +230,15 @@ export default function LeaveRequest() {
               className="whitespace-nowrap"
             >
               Apply Leave
+            </Button>
+
+            <Button 
+              variant="contained" 
+              startIcon={<TrendingUp />}
+              onClick={() => ExportEmployeesLeaveRequest(filteredLeaveRequests)}
+              className="whitespace-nowrap"
+            >
+              Export Data
             </Button>
           </div>
         </CardContent>

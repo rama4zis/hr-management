@@ -28,5 +28,8 @@ export default function ExportEmployeesAttendance(data: any[] = []) {
         a.click()
         window.URL.revokeObjectURL(url)
     })
+
+    console.log('Exported attendance to Excel successfully.')
+    console.log(JSON.stringify(data, null, 2)) // Log the data for debugging
     
 }
