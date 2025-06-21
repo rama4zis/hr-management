@@ -1,10 +1,10 @@
 "use client"
 
-import { 
-  AttachMoney, 
-  Download, 
-  CheckCircle, 
-  Warning, 
+import {
+  AttachMoney,
+  Download,
+  CheckCircle,
+  Warning,
   Schedule,
   Person,
   TrendingUp,
@@ -17,18 +17,18 @@ import {
   CalendarToday,
   Receipt
 } from "@mui/icons-material";
-import { 
-  Button, 
-  Card, 
-  CardContent, 
-  Typography, 
-  Chip, 
-  Table, 
-  TableBody, 
-  TableCell, 
-  TableContainer, 
-  TableHead, 
-  TableRow, 
+import {
+  Button,
+  Card,
+  CardContent,
+  Typography,
+  Chip,
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TableRow,
   Paper,
   Box,
   LinearProgress,
@@ -58,15 +58,22 @@ export default function CurrentPayroll() {
   const [detailModalOpen, setDetailModalOpen] = useState(false);
   const [selectedPayroll, setSelectedPayroll] = useState<any>(null);
 
-  // Filter current month payroll
-  const currentMonthPayroll = payrollData.filter(pay => pay.payPeriod.includes("2024-01"));
+  // Filter current month payroll (June 2025)
+  const currentDate = new Date();
+  const currentMonth = currentDate.getMonth() + 1; // June = 6
+  const currentYear = currentDate.getFullYear(); // 2025
+  const currentMonthString = `${currentYear}-${currentMonth.toString().padStart(2, '0')}`;
   
+  const currentMonthPayroll = payrollData.filter(pay => 
+    pay.payPeriod.includes(currentMonthString)
+  );
+
   // Calculate statistics
   const totalEmployees = employeesData.filter(emp => emp.status === "Active").length;
   const processedPayroll = currentMonthPayroll.filter(pay => pay.status === "Paid").length;
   const pendingPayroll = currentMonthPayroll.filter(pay => pay.status === "Pending").length;
   const processingPayroll = currentMonthPayroll.filter(pay => pay.status === "Processed").length;
-  
+
   const grossPay = currentMonthPayroll.reduce((acc, pay) => acc + pay.baseSalary + pay.overtimePay + pay.bonus, 0);
   const netPay = currentMonthPayroll.reduce((acc, pay) => acc + pay.netPay, 0);
   const totalDeductions = currentMonthPayroll.reduce((acc, pay) => acc + pay.deductions, 0);
@@ -75,9 +82,9 @@ export default function CurrentPayroll() {
   const filteredPayroll = useMemo(() => {
     return currentMonthPayroll.filter(payroll => {
       const matchesSearch = payroll.employeeName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                           payroll.payPeriod.toLowerCase().includes(searchTerm.toLowerCase());
+        payroll.payPeriod.toLowerCase().includes(searchTerm.toLowerCase());
       const matchesStatus = statusFilter === 'all' || payroll.status === statusFilter;
-      
+
       return matchesSearch && matchesStatus;
     });
   }, [currentMonthPayroll, searchTerm, statusFilter]);
@@ -127,34 +134,89 @@ export default function CurrentPayroll() {
 
   return (
     <div className="p-6">
+      {/* Header */}
       <div className="mb-6">
-        <div className="flex justify-between items-start">
-          <div>
-            <Typography variant="h4" component="h1" className="font-bold text-gray-900">
-              Current Payroll
-            </Typography>
-            <Typography variant="body2" color="text.secondary" className="mt-1">
-              Manage and process current payroll period
-            </Typography>
-          </div>
-          <div className="flex gap-2">
-            <Button
-              variant="outlined"
-              startIcon={<Download />}
-              onClick={() => window.print()}
-            >
-              Export
-            </Button>
-            <Button
-              variant="contained"
-              startIcon={<Payment />}
-              onClick={handleProcessPayroll}
-              disabled={processingStatus === 'processing'}
-            >
-              Process Payroll
-            </Button>
-          </div>
-        </div>
+        <h1 className="text-2xl font-bold text-gray-900">Current Payroll - June 2025</h1>
+        <p className="text-sm text-gray-500 mt-1">Manage current month payroll processing</p>
+      </div>
+
+      {/* Summary Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+        <Card>
+          <CardContent>
+            <div className="flex justify-between items-center">
+              <div>
+                <Typography color="text.secondary" gutterBottom>
+                  Total Employees
+                </Typography>
+                <Typography variant="h4" component="div" className="font-bold text-blue-600">
+                  {totalEmployees}
+                </Typography>
+                <Typography variant="body2" color="text.secondary">
+                  Active Staff
+                </Typography>
+              </div>
+              <Person className="text-blue-500" />
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardContent>
+            <div className="flex justify-between items-center">
+              <div>
+                <Typography color="text.secondary" gutterBottom>
+                  Processed
+                </Typography>
+                <Typography variant="h4" component="div" className="font-bold text-green-600">
+                  {processedPayroll}
+                </Typography>
+                <Typography variant="body2" color="text.secondary">
+                  Ready to Pay
+                </Typography>
+              </div>
+              <CheckCircle className="text-green-500" />
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardContent>
+            <div className="flex justify-between items-center">
+              <div>
+                <Typography color="text.secondary" gutterBottom>
+                  Pending
+                </Typography>
+                <Typography variant="h4" component="div" className="font-bold text-orange-600">
+                  {pendingPayroll}
+                </Typography>
+                <Typography variant="body2" color="text.secondary">
+                  Awaiting Review
+                </Typography>
+              </div>
+              <Schedule className="text-orange-500" />
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardContent>
+            <div className="flex justify-between items-center">
+              <div>
+                <Typography color="text.secondary" gutterBottom>
+                  Total Payout
+                </Typography>
+                <Typography variant="h4" component="div" className="font-bold text-green-600">
+                  {formatCurrency(netPay)}
+                </Typography>
+                <Typography variant="body2" color="text.secondary">
+                  Net Amount
+                </Typography>
+              </div>
+              <AttachMoney className="text-green-500" />
+            </div>
+          </CardContent>
+        </Card>
       </div>
 
       {/* Processing Status */}
@@ -175,85 +237,6 @@ export default function CurrentPayroll() {
         </Alert>
       )}
 
-      {/* Summary Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-        <Card>
-          <CardContent>
-            <div className="flex justify-between items-center">
-              <div>
-                <Typography color="text.secondary" gutterBottom>
-                  Total Employees
-                </Typography>
-                <Typography variant="h4" component="div" className="font-bold">
-                  {totalEmployees}
-                </Typography>
-                <Typography variant="body2" color="text.secondary">
-                  In Current Period
-                </Typography>
-              </div>
-              <Person className="text-blue-500" />
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardContent>
-            <div className="flex justify-between items-center">
-              <div>
-                <Typography color="text.secondary" gutterBottom>
-                  Processed
-                </Typography>
-                <Typography variant="h4" component="div" className="font-bold text-green-600">
-                  {processedPayroll}
-                </Typography>
-                <Typography variant="body2" color="text.secondary">
-                  Payments Completed
-                </Typography>
-              </div>
-              <CheckCircle className="text-green-500" />
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardContent>
-            <div className="flex justify-between items-center">
-              <div>
-                <Typography color="text.secondary" gutterBottom>
-                  Pending
-                </Typography>
-                <Typography variant="h4" component="div" className="font-bold text-orange-600">
-                  {pendingPayroll}
-                </Typography>
-                <Typography variant="body2" color="text.secondary">
-                  Awaiting Processing
-                </Typography>
-              </div>
-              <Schedule className="text-orange-500" />
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardContent>
-            <div className="flex justify-between items-center">
-              <div>
-                <Typography color="text.secondary" gutterBottom>
-                  Net Pay
-                </Typography>
-                <Typography variant="h4" component="div" className="font-bold text-green-600">
-                  {formatCurrency(netPay)}
-                </Typography>
-                <Typography variant="body2" color="text.secondary">
-                  Total Disbursed
-                </Typography>
-              </div>
-              <TrendingUp className="text-green-500" />
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-
       {/* Filters and Search */}
       <Card className="mb-6">
         <CardContent>
@@ -269,7 +252,7 @@ export default function CurrentPayroll() {
               }}
               className="flex-1"
             />
-            
+
             <FormControl size="small" className="min-w-32">
               <InputLabel>Status</InputLabel>
               <Select
@@ -284,12 +267,18 @@ export default function CurrentPayroll() {
               </Select>
             </FormControl>
 
-            <Button 
-              variant="contained" 
+            <Button
+              variant="contained"
               startIcon={<Download />}
-              onClick={() => window.print()}
             >
               Export
+            </Button>
+            <Button
+              variant="contained"
+              startIcon={<AttachMoney />}
+
+            >
+              PROCESS PAYROLL
             </Button>
           </div>
         </CardContent>
@@ -308,24 +297,24 @@ export default function CurrentPayroll() {
           <TableContainer component={Paper} elevation={0}>
             <Table>
               <TableHead>
-                <TableRow>
-                  <TableCell className="font-semibold">Employee</TableCell>
-                  <TableCell className="font-semibold">Pay Period</TableCell>
-                  <TableCell className="font-semibold">Base Salary</TableCell>
-                  <TableCell className="font-semibold">Overtime</TableCell>
-                  <TableCell className="font-semibold">Bonus</TableCell>
-                  <TableCell className="font-semibold">Deductions</TableCell>
-                  <TableCell className="font-semibold">Net Pay</TableCell>
-                  <TableCell className="font-semibold">Status</TableCell>
-                  <TableCell className="font-semibold">Actions</TableCell>
+                <TableRow className="bg-gray-50">
+                  <TableCell className="font-semibold text-gray-700">Employee</TableCell>
+                  <TableCell className="font-semibold text-gray-700">Pay Period</TableCell>
+                  <TableCell className="font-semibold text-gray-700">Base Salary</TableCell>
+                  <TableCell className="font-semibold text-gray-700">Overtime</TableCell>
+                  <TableCell className="font-semibold text-gray-700">Bonus</TableCell>
+                  <TableCell className="font-semibold text-gray-700">Deductions</TableCell>
+                  <TableCell className="font-semibold text-gray-700">Net Pay</TableCell>
+                  <TableCell className="font-semibold text-gray-700">Status</TableCell>
+                  <TableCell className="font-semibold text-gray-700">Actions</TableCell>
                 </TableRow>
               </TableHead>
               <TableBody>
                 {filteredPayroll.map((payroll) => (
-                  <TableRow 
+                  <TableRow
                     key={payroll.id}
                     hover
-                    className="cursor-pointer hover:bg-gray-50"
+                    className="cursor-pointer hover:bg-blue-50 transition-colors"
                     onClick={() => handleViewDetails(payroll)}
                   >
                     <TableCell>
@@ -351,15 +340,15 @@ export default function CurrentPayroll() {
                       <div className="text-sm text-red-600 font-medium">-{formatCurrency(payroll.deductions)}</div>
                     </TableCell>
                     <TableCell>
-                      <div className="text-sm font-medium text-green-600">{formatCurrency(payroll.netPay)}</div>
+                      <div className="text-sm font-semibold text-green-600">{formatCurrency(payroll.netPay)}</div>
                     </TableCell>
                     <TableCell>
-                      <Chip 
+                      <Chip
                         icon={getStatusIcon(payroll.status)}
-                        label={payroll.status} 
+                        label={payroll.status}
                         color={getStatusColor(payroll.status) as any}
                         size="small"
-                        variant="outlined"
+                        variant="filled"
                       />
                     </TableCell>
                     <TableCell>
@@ -371,6 +360,7 @@ export default function CurrentPayroll() {
                           e.stopPropagation();
                           handleViewDetails(payroll);
                         }}
+                        className="text-blue-600 border-blue-600 hover:bg-blue-50"
                       >
                         View
                       </Button>
@@ -391,249 +381,94 @@ export default function CurrentPayroll() {
         </CardContent>
       </Card>
 
-      {/* Payroll Detail Modal */}
+      {/* Simplified Payroll Detail Modal */}
       <Dialog
         open={detailModalOpen}
         onClose={handleCloseModal}
-        maxWidth="md"
+        maxWidth="sm"
         fullWidth
       >
         <DialogTitle>
           <div className="flex justify-between items-center">
             <Typography variant="h6">Payroll Details</Typography>
-            <IconButton onClick={handleCloseModal}>
+            <IconButton onClick={handleCloseModal} size="small">
               <Close />
             </IconButton>
           </div>
         </DialogTitle>
         <DialogContent>
           {selectedPayroll && (
-            <div className="space-y-6">
-              {/* Employee Information */}
-              <Card>
-                <CardContent>
-                  <div className="flex items-center gap-4 mb-4">
-                    <Avatar sx={{ width: 64, height: 64, bgcolor: 'primary.main' }}>
-                      {selectedPayroll.employeeName.charAt(0)}
-                    </Avatar>
-                    <div>
-                      <Typography variant="h6">{selectedPayroll.employeeName}</Typography>
-                      <Typography variant="body2" color="text.secondary">
-                        Employee ID: {selectedPayroll.employeeId}
-                      </Typography>
-                      <Chip 
-                        icon={getStatusIcon(selectedPayroll.status)}
-                        label={selectedPayroll.status} 
-                        color={getStatusColor(selectedPayroll.status) as any}
-                        size="small"
-                        className="mt-2"
-                      />
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-
-              {/* Pay Period Information */}
-              <Card>
-                <CardContent>
-                  <Typography variant="h6" className="mb-4 flex items-center gap-2">
-                    <CalendarToday fontSize="small" />
-                    Pay Period Information
+            <div className="space-y-4">
+              {/* Employee Info */}
+              <div className="flex items-center gap-3 p-4 bg-blue-50 rounded-lg">
+                <Avatar sx={{ width: 48, height: 48, bgcolor: 'primary.main' }}>
+                  {selectedPayroll.employeeName.charAt(0)}
+                </Avatar>
+                <div>
+                  <Typography variant="h6" className="text-blue-900">
+                    {selectedPayroll.employeeName}
                   </Typography>
-                  <Grid container spacing={3}>
-                    <Grid>
-                      <div className="space-y-2">
-                        <div className="flex justify-between">
-                          <Typography variant="body2" color="text.secondary">Pay Period:</Typography>
-                          <Typography variant="body2" className="font-medium">
-                            {selectedPayroll.payPeriod}
-                          </Typography>
-                        </div>
-                        <div className="flex justify-between">
-                          <Typography variant="body2" color="text.secondary">Pay Date:</Typography>
-                          <Typography variant="body2" className="font-medium">
-                            {new Date(selectedPayroll.payDate).toLocaleDateString()}
-                          </Typography>
-                        </div>
-                      </div>
-                    </Grid>
-                    <Grid>
-                      <div className="space-y-2">
-                        <div className="flex justify-between">
-                          <Typography variant="body2" color="text.secondary">Status:</Typography>
-                          <Chip 
-                            icon={getStatusIcon(selectedPayroll.status)}
-                            label={selectedPayroll.status} 
-                            color={getStatusColor(selectedPayroll.status) as any}
-                            size="small"
-                          />
-                        </div>
-                      </div>
-                    </Grid>
-                  </Grid>
-                </CardContent>
-              </Card>
-
-              {/* Payroll Breakdown */}
-              <Card>
-                <CardContent>
-                  <Typography variant="h6" className="mb-4 flex items-center gap-2">
-                    <Receipt fontSize="small" />
-                    Payroll Breakdown
+                  <Typography variant="body2" className="text-blue-700">
+                    ID: {selectedPayroll.employeeId} • {selectedPayroll.payPeriod}
                   </Typography>
-                  <div className="space-y-3">
-                    <div className="flex justify-between items-center">
-                      <Typography variant="body1">Base Salary</Typography>
-                      <Typography variant="body1" className="font-medium">
-                        {formatCurrency(selectedPayroll.baseSalary)}
-                      </Typography>
-                    </div>
-                    <div className="flex justify-between items-center">
-                      <Typography variant="body1">Overtime Pay</Typography>
-                      <Typography variant="body1" className="font-medium">
-                        {formatCurrency(selectedPayroll.overtimePay)}
-                      </Typography>
-                    </div>
-                    <div className="flex justify-between items-center">
-                      <Typography variant="body1">Bonus</Typography>
-                      <Typography variant="body1" className="font-medium">
-                        {formatCurrency(selectedPayroll.bonus)}
-                      </Typography>
-                    </div>
-                    <Divider />
-                    <div className="flex justify-between items-center">
-                      <Typography variant="body1" className="font-medium">Gross Pay</Typography>
-                      <Typography variant="body1" className="font-bold">
-                        {formatCurrency(selectedPayroll.baseSalary + selectedPayroll.overtimePay + selectedPayroll.bonus)}
-                      </Typography>
-                    </div>
-                    <div className="flex justify-between items-center">
-                      <Typography variant="body1" color="error">Deductions</Typography>
-                      <Typography variant="body1" color="error" className="font-medium">
-                        -{formatCurrency(selectedPayroll.deductions)}
-                      </Typography>
-                    </div>
-                    <Divider />
-                    <div className="flex justify-between items-center">
-                      <Typography variant="h6" className="font-bold">Net Pay</Typography>
-                      <Typography variant="h6" className="font-bold text-green-600">
-                        {formatCurrency(selectedPayroll.netPay)}
-                      </Typography>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
+                </div>
+              </div>
+
+              {/* Pay Breakdown */}
+              <div className="bg-gray-50 p-4 rounded-lg space-y-3">
+                <div className="flex justify-between">
+                  <span className="text-gray-600">Base Salary:</span>
+                  <span className="font-medium">{formatCurrency(selectedPayroll.baseSalary)}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-gray-600">Overtime:</span>
+                  <span className="font-medium">{formatCurrency(selectedPayroll.overtimePay)}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-gray-600">Bonus:</span>
+                  <span className="font-medium">{formatCurrency(selectedPayroll.bonus)}</span>
+                </div>
+                <Divider />
+                <div className="flex justify-between">
+                  <span className="text-gray-600">Deductions:</span>
+                  <span className="font-medium text-red-600">-{formatCurrency(selectedPayroll.deductions)}</span>
+                </div>
+                <Divider />
+                <div className="flex justify-between text-lg">
+                  <span className="font-semibold">Net Pay:</span>
+                  <span className="font-bold text-green-600">{formatCurrency(selectedPayroll.netPay)}</span>
+                </div>
+              </div>
+
+              {/* Status */}
+              <div className="text-center">
+                <Chip
+                  icon={getStatusIcon(selectedPayroll.status)}
+                  label={selectedPayroll.status}
+                  color={getStatusColor(selectedPayroll.status) as any}
+                  size="medium"
+                />
+              </div>
             </div>
           )}
         </DialogContent>
-        <DialogActions>
+        <DialogActions className="p-4">
           <Button onClick={handleCloseModal} variant="outlined">
             Close
           </Button>
-          <Button 
-            variant="contained" 
-            startIcon={<Email />}
-            onClick={() => {
-              console.log('Send payslip to:', selectedPayroll?.employeeName);
-              handleCloseModal();
-            }}
-          >
-            Send Payslip
-          </Button>
-          <Button 
-            variant="contained" 
+          <Button
+            variant="contained"
             startIcon={<Print />}
             onClick={() => {
               console.log('Print payslip for:', selectedPayroll?.employeeName);
               handleCloseModal();
             }}
           >
-            Print
+            Print Payslip
           </Button>
         </DialogActions>
       </Dialog>
 
-      {/* Summary Section */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-6">
-        <Card>
-          <CardContent>
-            <Typography variant="h6" component="div" className="mb-2">
-              Payroll Summary
-            </Typography>
-            <div className="space-y-2">
-              <div className="flex justify-between">
-                <span className="text-sm text-gray-600">Gross Pay:</span>
-                <span className="font-medium">{formatCurrency(grossPay)}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-sm text-gray-600">Total Deductions:</span>
-                <span className="font-medium text-red-600">{formatCurrency(totalDeductions)}</span>
-              </div>
-              <Divider />
-              <div className="flex justify-between font-semibold">
-                <span>Net Pay:</span>
-                <span className="text-green-600">{formatCurrency(netPay)}</span>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardContent>
-            <Typography variant="h6" component="div" className="mb-2">
-              Processing Status
-            </Typography>
-            <div className="space-y-2">
-              <div className="flex justify-between">
-                <span className="text-sm text-gray-600">Completed:</span>
-                <span className="font-medium text-green-600">{processedPayroll}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-sm text-gray-600">Processing:</span>
-                <span className="font-medium text-blue-600">{processingPayroll}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-sm text-gray-600">Pending:</span>
-                <span className="font-medium text-orange-600">{pendingPayroll}</span>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardContent>
-            <Typography variant="h6" component="div" className="mb-2">
-              Quick Actions
-            </Typography>
-            <div className="space-y-2">
-              <Button 
-                variant="outlined" 
-                size="small" 
-                fullWidth 
-                startIcon={<Download />}
-              >
-                Export Report
-              </Button>
-              <Button 
-                variant="outlined" 
-                size="small" 
-                fullWidth 
-                startIcon={<AttachMoney />}
-              >
-                Generate Payslips
-              </Button>
-              <Button 
-                variant="outlined" 
-                size="small" 
-                fullWidth 
-                startIcon={<Payment />}
-              >
-                Send Payments
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
     </div>
   );
 } 
