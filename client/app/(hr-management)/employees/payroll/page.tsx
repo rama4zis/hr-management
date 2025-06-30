@@ -1,145 +1,405 @@
-"use client"
+'use client';
 
-import { AttachMoney, CalendarMonth, People, TrendingUp, Download } from "@mui/icons-material";
-import { Tab, Tabs, Button, Card, CardContent, Typography, Box, Chip } from "@mui/material";
-import React, { useState } from "react";
-import { payrollData } from "../../../../data/payroll-data";
-import { employeesData } from "../../../../data/employees-data";
-import CurrentPayroll from "./current-payroll";
-import PayrollHistory from "./payroll-history";
-import Reports from "./reports";
+import React, { useState, useMemo } from 'react';
+import {
+  Box,
+  Typography,
+  Avatar,
+  Paper,
+  Grid,
+  IconButton,
+  Tooltip,
+  Button,
+} from '@mui/material';
+import {
+  GetApp as DownloadIcon,
+  Visibility as ViewIcon,
+  Edit as EditIcon,
+  Payment as PaymentIcon,
+} from '@mui/icons-material';
+import { DatePicker } from '@mui/x-date-pickers/DatePicker';
+import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
+import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
+import dayjs from 'dayjs';
+import { dummyPayroll, getEmployeeName } from '../../../../data';
+import DataTable, { TableColumn, StatusChip, formatCurrency, formatDate } from '../../../../components/DataTable';
+import { Payroll } from '../../../../model/Payroll';
 
-export default function Payroll() {
-  const [currentTab, setCurrentTab] = useState("Current Payroll");
+export default function PayrollPage() {
+  const [selectedDate, setSelectedDate] = useState(dayjs()); // Current month
 
-  const handleTabChange = (event: React.SyntheticEvent, newValue: string) => {
-    setCurrentTab(newValue);
+  // Filter payroll data by selected month and year and add employee names
+  const filteredPayroll = useMemo(() => {
+    return dummyPayroll
+      .filter((payroll) => {
+        const payrollDate = dayjs(payroll.payPeriodStart);
+        return (
+          payrollDate.month() === selectedDate.month() &&
+          payrollDate.year() === selectedDate.year()
+        );
+      })
+      .map((payroll) => ({
+        ...payroll,
+        employeeName: getEmployeeName(payroll.employeeId) || 'Unknown Employee',
+      }));
+  }, [selectedDate]);
+
+  // Calculate summary statistics
+  const summaryStats = useMemo(() => {
+    const total = filteredPayroll.length;
+    const draft = filteredPayroll.filter(pay => pay.status === 'draft').length;
+    const processed = filteredPayroll.filter(pay => pay.status === 'processed').length;
+    const paid = filteredPayroll.filter(pay => pay.status === 'paid').length;
+    
+    const totalGrossPay = filteredPayroll.reduce((sum, pay) => sum + pay.grossPay, 0);
+    const totalNetPay = filteredPayroll.reduce((sum, pay) => sum + pay.netPay, 0);
+    const totalDeductions = filteredPayroll.reduce((sum, pay) => sum + pay.deductions, 0);
+    const totalOvertimePay = filteredPayroll.reduce((sum, pay) => sum + pay.overtime, 0);
+
+    return { 
+      total, 
+      draft, 
+      processed, 
+      paid, 
+      totalGrossPay, 
+      totalNetPay, 
+      totalDeductions,
+      totalOvertimePay 
+    };
+  }, [filteredPayroll]);
+
+  // Handle payroll actions
+  const handleProcessPayroll = (payroll: Payroll & { employeeName: string }) => {
+    console.log('Process payroll:', payroll.id);
+    // In a real app, this would make an API call to process the payroll
   };
 
-  // Calculate payroll statistics
-  const totalEmployees = employeesData.filter(emp => emp.status === "Active").length;
-  const currentMonthPayroll = payrollData.filter(pay => pay.payPeriod.includes("2024-01"));
-  const grossPay = currentMonthPayroll.reduce((acc, pay) => acc + pay.baseSalary + pay.overtimePay + pay.bonus, 0);
-  const netPay = currentMonthPayroll.reduce((acc, pay) => acc + pay.netPay, 0);
-  const totalDeductions = currentMonthPayroll.reduce((acc, pay) => acc + pay.deductions, 0);
+  const handleMarkAsPaid = (payroll: Payroll & { employeeName: string }) => {
+    console.log('Mark as paid:', payroll.id);
+    // In a real app, this would make an API call to mark as paid
+  };
 
-  const renderCurrentPayroll = () => (
-    <CurrentPayroll />
-  );
+  const handleDownloadPayslip = (payroll: Payroll & { employeeName: string }) => {
+    console.log('Download payslip:', payroll.id);
+    // In a real app, this would generate and download a PDF payslip
+  };
 
-  const renderPayrollHistory = () => (
-    <PayrollHistory />
-  );
+  const handleViewDetails = (payroll: Payroll & { employeeName: string }) => {
+    console.log('View payroll details:', payroll.id);
+    // In a real app, this would open a detailed view modal
+  };
 
-  const renderReports = () => (
-    <Reports/>
-  );
+  // Define table columns
+  const columns: TableColumn<Payroll & { employeeName: string }>[] = [
+    {
+      id: 'employee',
+      label: 'Employee',
+      minWidth: 200,
+      format: (value, row) => {
+        const employeeName = row.employeeName;
+        const initials = employeeName
+          .split(' ')
+          .map((n) => n[0])
+          .join('');
+
+        return (
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+            <Avatar sx={{ width: 35, height: 35 }}>{initials}</Avatar>
+            <Box>
+              <Typography variant="subtitle2" fontWeight="medium">
+                {employeeName}
+              </Typography>
+              <Typography variant="caption" color="text.secondary">
+                ID: {row.employeeId}
+              </Typography>
+            </Box>
+          </Box>
+        );
+      },
+    },
+    {
+      id: 'payPeriod',
+      label: 'Pay Period',
+      minWidth: 160,
+      format: (value, row) => (
+        <Box>
+          <Typography variant="body2" fontWeight="medium">
+            {formatDate(row.payPeriodStart, { month: 'short', day: 'numeric' })} - {formatDate(row.payPeriodEnd, { month: 'short', day: 'numeric' })}
+          </Typography>
+          <Typography variant="caption" color="text.secondary">
+            {selectedDate.format('MMMM YYYY')}
+          </Typography>
+        </Box>
+      ),
+    },
+    {
+      id: 'baseSalary',
+      label: 'Base Salary',
+      align: 'right',
+      format: (value) => (
+        <Typography variant="body2">
+          {formatCurrency(value)}
+        </Typography>
+      ),
+    },
+    {
+      id: 'overtime',
+      label: 'Overtime',
+      align: 'right',
+      format: (value) => (
+        <Typography variant="body2" color={value > 0 ? 'success.main' : 'text.secondary'}>
+          {value > 0 ? '+' : ''}{formatCurrency(value)}
+        </Typography>
+      ),
+    },
+    {
+      id: 'bonuses',
+      label: 'Bonuses',
+      align: 'right',
+      format: (value) => (
+        <Typography variant="body2" color={value > 0 ? 'success.main' : 'text.secondary'}>
+          {value > 0 ? '+' : ''}{formatCurrency(value)}
+        </Typography>
+      ),
+    },
+    {
+      id: 'deductions',
+      label: 'Deductions',
+      align: 'right',
+      format: (value) => (
+        <Typography variant="body2" color={value > 0 ? 'error.main' : 'text.secondary'}>
+          {value > 0 ? '-' : ''}{formatCurrency(value)}
+        </Typography>
+      ),
+    },
+    {
+      id: 'netPay',
+      label: 'Net Pay',
+      align: 'right',
+      format: (value) => (
+        <Typography variant="body2" fontWeight="bold" color="primary">
+          {formatCurrency(value)}
+        </Typography>
+      ),
+    },
+    {
+      id: 'status',
+      label: 'Status',
+      format: (value) => (
+        <StatusChip
+          status={value}
+          colorMap={{
+            draft: 'default',
+            processed: 'warning',
+            paid: 'success',
+          }}
+        />
+      ),
+    },
+    {
+      id: 'actions',
+      label: 'Actions',
+      align: 'center',
+      minWidth: 150,
+      format: (value, row) => (
+        <Box sx={{ display: 'flex', gap: 0.5 }}>
+          <Tooltip title="View Details">
+            <IconButton 
+              size="small" 
+              color="primary"
+              onClick={() => handleViewDetails(row)}
+            >
+              <ViewIcon fontSize="small" />
+            </IconButton>
+          </Tooltip>
+          
+          {row.status === 'draft' && (
+            <Tooltip title="Process Payroll">
+              <IconButton 
+                size="small" 
+                color="warning"
+                onClick={() => handleProcessPayroll(row)}
+              >
+                <EditIcon fontSize="small" />
+              </IconButton>
+            </Tooltip>
+          )}
+          
+          {row.status === 'processed' && (
+            <Tooltip title="Mark as Paid">
+              <IconButton 
+                size="small" 
+                color="success"
+                onClick={() => handleMarkAsPaid(row)}
+              >
+                <PaymentIcon fontSize="small" />
+              </IconButton>
+            </Tooltip>
+          )}
+          
+          {(row.status === 'processed' || row.status === 'paid') && (
+            <Tooltip title="Download Payslip">
+              <IconButton 
+                size="small" 
+                color="info"
+                onClick={() => handleDownloadPayslip(row)}
+              >
+                <DownloadIcon fontSize="small" />
+              </IconButton>
+            </Tooltip>
+          )}
+        </Box>
+      ),
+    },
+  ];
 
   return (
-    <div className="p-6">
-      <div className="mb-6">
-        <h1 className="text-2xl font-bold text-gray-900">Payroll Management</h1>
-        <p className="text-sm text-gray-500 mt-1">Process payroll, manage payments, and generate reports.</p>
-      </div>
-
-      {/* Summary Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-        <Card className="hover:shadow-lg transition-shadow">
-          <CardContent>
-            <div className="flex justify-between items-center">
-              <div>
-                <Typography color="text.secondary" gutterBottom>
-                  Current Period
-                </Typography>
-                <Typography variant="h4" component="div" className="font-bold">
-                  {new Date().toLocaleDateString("en-US", { month: "long", year: "numeric" })}
-                </Typography>
-                <Typography variant="body2" color="error" className="mt-1">
-                  Processing
-                </Typography>
-              </div>
-              <CalendarMonth className="text-blue-500" />
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card className="hover:shadow-lg transition-shadow">
-          <CardContent>
-            <div className="flex justify-between items-center">
-              <div>
-                <Typography color="text.secondary" gutterBottom>
-                  Total Employees
-                </Typography>
-                <Typography variant="h4" component="div" className="font-bold">
-                  {totalEmployees}
-                </Typography>
-                <Typography variant="body2" color="text.secondary">
-                  Active Employees
-                </Typography>
-              </div>
-              <People className="text-green-500" />
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card className="hover:shadow-lg transition-shadow">
-          <CardContent>
-            <div className="flex justify-between items-center">
-              <div>
-                <Typography color="text.secondary" gutterBottom>
-                  Gross Pay
-                </Typography>
-                <Typography variant="h4" component="div" className="font-bold">
-                  ${grossPay.toLocaleString()}
-                </Typography>
-                <Typography variant="body2" color="text.secondary">
-                  Before Deductions
-                </Typography>
-              </div>
-              <AttachMoney className="text-orange-500" />
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card className="hover:shadow-lg transition-shadow">
-          <CardContent>
-            <div className="flex justify-between items-center">
-              <div>
-                <Typography color="text.secondary" gutterBottom>
-                  Net Pay
-                </Typography>
-                <Typography variant="h4" component="div" className="font-bold text-green-600">
-                  ${netPay.toLocaleString()}
-                </Typography>
-                <Typography variant="body2" color="text.secondary">
-                  After Deductions
-                </Typography>
-              </div>
-              <TrendingUp className="text-green-500" />
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Tabs */}
-      <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
-        <Tabs
-          value={currentTab}
-          onChange={handleTabChange}
-          variant="scrollable"
-          scrollButtons="auto"
-          aria-label="payroll tabs"
+    <LocalizationProvider dateAdapter={AdapterDayjs}>
+      <Box>
+        {/* Page Header with Date Filter */}
+        <Box
+          sx={{
+            mb: 3,
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'flex-start',
+          }}
         >
-          <Tab value="Current Payroll" label="Current Payroll" />
-          <Tab value="Payroll History" label="Payroll History" />
-          {/* <Tab value="Reports" label="Reports" /> */}
-        </Tabs>
-      </Box>
+          <Box>
+            <Typography variant="h4" component="h1" gutterBottom>
+              Payroll Management
+            </Typography>
+            <Typography variant="body1" color="text.secondary">
+              Manage employee payroll and salary payments
+            </Typography>
+          </Box>
 
-      {/* Tab Content */}
-      {currentTab === "Current Payroll" && renderCurrentPayroll()}
-      {currentTab === "Payroll History" && renderPayrollHistory()}
-      {currentTab === "Reports" && renderReports()}
-    </div>
+          {/* Month/Year Picker */}
+          <Box sx={{ minWidth: 200 }}>
+            <DatePicker
+              label="Select Month/Year"
+              value={selectedDate}
+              onChange={(newValue) => newValue && setSelectedDate(newValue)}
+              views={['year', 'month']}
+              slotProps={{
+                textField: {
+                  size: 'small',
+                  fullWidth: true,
+                },
+              }}
+            />
+          </Box>
+        </Box>
+
+        {/* Summary Statistics - Row 1 */}
+        <Grid container spacing={2} sx={{ mb: 2 }}>
+          <Grid item xs={12} sm={6} md={3}>
+            <Paper sx={{ p: 2, textAlign: 'center' }}>
+              <Typography variant="h6" color="primary">
+                {summaryStats.total}
+              </Typography>
+              <Typography variant="body2" color="text.secondary">
+                Total Employees
+              </Typography>
+            </Paper>
+          </Grid>
+          <Grid item xs={12} sm={6} md={3}>
+            <Paper sx={{ p: 2, textAlign: 'center' }}>
+              <Typography variant="h6" color="default">
+                {summaryStats.draft}
+              </Typography>
+              <Typography variant="body2" color="text.secondary">
+                Draft
+              </Typography>
+            </Paper>
+          </Grid>
+          <Grid item xs={12} sm={6} md={3}>
+            <Paper sx={{ p: 2, textAlign: 'center' }}>
+              <Typography variant="h6" color="warning.main">
+                {summaryStats.processed}
+              </Typography>
+              <Typography variant="body2" color="text.secondary">
+                Processed
+              </Typography>
+            </Paper>
+          </Grid>
+          <Grid item xs={12} sm={6} md={3}>
+            <Paper sx={{ p: 2, textAlign: 'center' }}>
+              <Typography variant="h6" color="success.main">
+                {summaryStats.paid}
+              </Typography>
+              <Typography variant="body2" color="text.secondary">
+                Paid
+              </Typography>
+            </Paper>
+          </Grid>
+        </Grid>
+
+        {/* Summary Statistics - Row 2 (Financial) */}
+        <Grid container spacing={2} sx={{ mb: 3 }}>
+          <Grid item xs={12} sm={6} md={3}>
+            <Paper sx={{ p: 2, textAlign: 'center' }}>
+              <Typography variant="h6" color="primary" sx={{ fontSize: '1.1rem' }}>
+                {formatCurrency(summaryStats.totalGrossPay)}
+              </Typography>
+              <Typography variant="body2" color="text.secondary">
+                Total Gross Pay
+              </Typography>
+            </Paper>
+          </Grid>
+          <Grid item xs={12} sm={6} md={3}>
+            <Paper sx={{ p: 2, textAlign: 'center' }}>
+              <Typography variant="h6" color="success.main" sx={{ fontSize: '1.1rem' }}>
+                {formatCurrency(summaryStats.totalNetPay)}
+              </Typography>
+              <Typography variant="body2" color="text.secondary">
+                Total Net Pay
+              </Typography>
+            </Paper>
+          </Grid>
+          <Grid item xs={12} sm={6} md={3}>
+            <Paper sx={{ p: 2, textAlign: 'center' }}>
+              <Typography variant="h6" color="error.main" sx={{ fontSize: '1.1rem' }}>
+                {formatCurrency(summaryStats.totalDeductions)}
+              </Typography>
+              <Typography variant="body2" color="text.secondary">
+                Total Deductions
+              </Typography>
+            </Paper>
+          </Grid>
+          <Grid item xs={12} sm={6} md={3}>
+            <Paper sx={{ p: 2, textAlign: 'center' }}>
+              <Typography variant="h6" color="info.main" sx={{ fontSize: '1.1rem' }}>
+                {formatCurrency(summaryStats.totalOvertimePay)}
+              </Typography>
+              <Typography variant="body2" color="text.secondary">
+                Total Overtime
+              </Typography>
+            </Paper>
+          </Grid>
+        </Grid>
+
+        {/* Payroll Table */}
+        <DataTable
+          columns={columns}
+          data={filteredPayroll}
+          searchPlaceholder="Search payroll by employee name..."
+          searchFields={['employeeName']}
+          getRowId={(row) => row.id}
+          emptyMessage={`No payroll records found for ${selectedDate.format('MMMM YYYY')}`}
+          defaultRowsPerPage={10}
+          rowsPerPageOptions={[5, 10, 15, 25]}
+        />
+
+        {/* Additional Info */}
+        <Box sx={{ mt: 2 }}>
+          <Typography variant="caption" color="text.secondary">
+            Showing payroll for {selectedDate.format('MMMM YYYY')} • 
+            Payment completion rate: {summaryStats.total > 0 ? ((summaryStats.paid / summaryStats.total) * 100).toFixed(1) : 0}% • 
+            Average net pay: {summaryStats.total > 0 ? formatCurrency(summaryStats.totalNetPay / summaryStats.total) : formatCurrency(0)}
+          </Typography>
+        </Box>
+      </Box>
+    </LocalizationProvider>
   );
 }
