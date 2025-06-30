@@ -259,7 +259,7 @@ export default function LeaveRequestsPage() {
 
         {/* Summary Statistics */}
         <Grid container spacing={2} sx={{ mb: 3 }}>
-          <Grid item xs={12} sm={6} md={3}>
+          <Grid size={{xs: 12, sm: 6, md: 3}}>
             <Paper sx={{ p: 2, textAlign: 'center' }}>
               <Typography variant="h6" color="primary">
                 {summaryStats.total}
@@ -269,7 +269,7 @@ export default function LeaveRequestsPage() {
               </Typography>
             </Paper>
           </Grid>
-          <Grid item xs={12} sm={6} md={3}>
+          <Grid size={{xs: 12, sm: 6, md: 3}}>
             <Paper sx={{ p: 2, textAlign: 'center' }}>
               <Typography variant="h6" color="warning.main">
                 {summaryStats.pending}
@@ -279,7 +279,7 @@ export default function LeaveRequestsPage() {
               </Typography>
             </Paper>
           </Grid>
-          <Grid item xs={12} sm={6} md={3}>
+          <Grid size={{xs: 12, sm: 6, md: 3}}>
             <Paper sx={{ p: 2, textAlign: 'center' }}>
               <Typography variant="h6" color="success.main">
                 {summaryStats.approved}
@@ -289,7 +289,7 @@ export default function LeaveRequestsPage() {
               </Typography>
             </Paper>
           </Grid>
-          <Grid item xs={12} sm={6} md={3}>
+          <Grid size={{xs: 12, sm: 6, md: 3}}>
             <Paper sx={{ p: 2, textAlign: 'center' }}>
               <Typography variant="h6" color="error.main">
                 {summaryStats.rejected}
@@ -303,7 +303,7 @@ export default function LeaveRequestsPage() {
 
         {/* Additional Stats Row */}
         <Grid container spacing={2} sx={{ mb: 3 }}>
-          <Grid item xs={12} sm={6}>
+          <Grid size={{xs: 12, sm: 6}}>
             <Paper sx={{ p: 2, textAlign: 'center' }}>
               <Typography variant="h6" color="info.main">
                 {summaryStats.totalDays}
@@ -313,7 +313,7 @@ export default function LeaveRequestsPage() {
               </Typography>
             </Paper>
           </Grid>
-          <Grid item xs={12} sm={6}>
+          <Grid size={{xs: 12, sm: 6}}>
             <Paper sx={{ p: 2, textAlign: 'center' }}>
               <Typography variant="h6" color="secondary.main">
                 {summaryStats.approved > 0 ? (summaryStats.totalDays / summaryStats.approved).toFixed(1) : 0}

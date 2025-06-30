@@ -6,11 +6,11 @@ import {
   Typography,
   Avatar,
   Paper,
-  Grid,
   IconButton,
   Tooltip,
   Button,
 } from '@mui/material';
+import Grid from '@mui/material/Grid';
 import {
   GetApp as DownloadIcon,
   Visibility as ViewIcon,
@@ -293,7 +293,7 @@ export default function PayrollPage() {
 
         {/* Summary Statistics - Row 1 */}
         <Grid container spacing={2} sx={{ mb: 2 }}>
-          <Grid item xs={12} sm={6} md={3}>
+          <Grid size={{xs: 12, sm: 6, md: 3}}>
             <Paper sx={{ p: 2, textAlign: 'center' }}>
               <Typography variant="h6" color="primary">
                 {summaryStats.total}
@@ -303,7 +303,7 @@ export default function PayrollPage() {
               </Typography>
             </Paper>
           </Grid>
-          <Grid item xs={12} sm={6} md={3}>
+          <Grid size={{xs: 12, sm: 6, md: 3}}>
             <Paper sx={{ p: 2, textAlign: 'center' }}>
               <Typography variant="h6" color="default">
                 {summaryStats.draft}
@@ -313,7 +313,7 @@ export default function PayrollPage() {
               </Typography>
             </Paper>
           </Grid>
-          <Grid item xs={12} sm={6} md={3}>
+          <Grid size={{xs: 12, sm: 6, md: 3}}>
             <Paper sx={{ p: 2, textAlign: 'center' }}>
               <Typography variant="h6" color="warning.main">
                 {summaryStats.processed}
@@ -323,7 +323,7 @@ export default function PayrollPage() {
               </Typography>
             </Paper>
           </Grid>
-          <Grid item xs={12} sm={6} md={3}>
+          <Grid size={{xs: 12, sm: 6, md: 3}}>
             <Paper sx={{ p: 2, textAlign: 'center' }}>
               <Typography variant="h6" color="success.main">
                 {summaryStats.paid}
@@ -337,7 +337,7 @@ export default function PayrollPage() {
 
         {/* Summary Statistics - Row 2 (Financial) */}
         <Grid container spacing={2} sx={{ mb: 3 }}>
-          <Grid item xs={12} sm={6} md={3}>
+          <Grid size={{xs: 12, sm: 6, md: 3}}>
             <Paper sx={{ p: 2, textAlign: 'center' }}>
               <Typography variant="h6" color="primary" sx={{ fontSize: '1.1rem' }}>
                 {formatCurrency(summaryStats.totalGrossPay)}
@@ -347,7 +347,7 @@ export default function PayrollPage() {
               </Typography>
             </Paper>
           </Grid>
-          <Grid item xs={12} sm={6} md={3}>
+          <Grid size={{xs: 12, sm: 6, md: 3}}>
             <Paper sx={{ p: 2, textAlign: 'center' }}>
               <Typography variant="h6" color="success.main" sx={{ fontSize: '1.1rem' }}>
                 {formatCurrency(summaryStats.totalNetPay)}
@@ -357,7 +357,7 @@ export default function PayrollPage() {
               </Typography>
             </Paper>
           </Grid>
-          <Grid item xs={12} sm={6} md={3}>
+          <Grid size={{xs: 12, sm: 6, md: 3}}>
             <Paper sx={{ p: 2, textAlign: 'center' }}>
               <Typography variant="h6" color="error.main" sx={{ fontSize: '1.1rem' }}>
                 {formatCurrency(summaryStats.totalDeductions)}
@@ -367,7 +367,7 @@ export default function PayrollPage() {
               </Typography>
             </Paper>
           </Grid>
-          <Grid item xs={12} sm={6} md={3}>
+          <Grid size={{xs: 12, sm: 6, md: 3}}>
             <Paper sx={{ p: 2, textAlign: 'center' }}>
               <Typography variant="h6" color="info.main" sx={{ fontSize: '1.1rem' }}>
                 {formatCurrency(summaryStats.totalOvertimePay)}

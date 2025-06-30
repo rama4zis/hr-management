@@ -5,10 +5,6 @@ import {
   Box,
   Typography,
   Avatar,
-  FormControl,
-  InputLabel,
-  Select,
-  MenuItem,
   Paper,
   Grid,
 } from "@mui/material";
@@ -201,7 +197,7 @@ export default function AttendancePage() {
 
         {/* Summary Statistics */}
         <Grid container spacing={2} sx={{ mb: 3 }}>
-          <Grid item xs={12} sm={6} md={2.4}>
+          <Grid size={{xs: 12, sm: 6, md: 3}}>
             <Paper sx={{ p: 2, textAlign: "center" }}>
               <Typography variant="h6" color="primary">
                 {summaryStats.total}
@@ -211,7 +207,7 @@ export default function AttendancePage() {
               </Typography>
             </Paper>
           </Grid>
-          <Grid item xs={12} sm={6} md={2.4}>
+          <Grid size={{xs: 12, sm: 6, md: 3}}>
             <Paper sx={{ p: 2, textAlign: "center" }}>
               <Typography variant="h6" color="success.main">
                 {summaryStats.present}
@@ -221,7 +217,7 @@ export default function AttendancePage() {
               </Typography>
             </Paper>
           </Grid>
-          <Grid item xs={12} sm={6} md={2.4}>
+          <Grid size={{xs: 12, sm: 6, md: 3}}>
             <Paper sx={{ p: 2, textAlign: "center" }}>
               <Typography variant="h6" color="warning.main">
                 {summaryStats.late}
@@ -231,7 +227,7 @@ export default function AttendancePage() {
               </Typography>
             </Paper>
           </Grid>
-          <Grid item xs={12} sm={6} md={2.4}>
+          <Grid size={{xs: 12, sm: 6, md: 3}}>
             <Paper sx={{ p: 2, textAlign: "center" }}>
               <Typography variant="h6" color="error.main">
                 {summaryStats.absent}
@@ -241,7 +237,7 @@ export default function AttendancePage() {
               </Typography>
             </Paper>
           </Grid>
-          <Grid item xs={12} sm={6} md={2.4}>
+          <Grid size={{xs: 12, sm: 6, md: 3}}>
             <Paper sx={{ p: 2, textAlign: "center" }}>
               <Typography variant="h6" color="info.main">
                 {summaryStats.totalHours}h
