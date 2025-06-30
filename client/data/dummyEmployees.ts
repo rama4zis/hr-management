@@ -6,11 +6,11 @@ export const dummyEmployees: Employee[] = [
     firstName: 'Sarah',
     lastName: 'Johnson',
     email: 'sarah.johnson@company.com',
-    phone: '+1-555-0101',
+    phone: '+62-812-3456-7890',
     departmentId: 'dept-1',
     positionId: 'pos-1',
     hireDate: new Date('2024-01-15'),
-    salary: 75000,
+    salary: 150000000, // IDR 150 million/year
     status: 'active',
     profileImage: '/profile.jpg',
   },
@@ -19,11 +19,11 @@ export const dummyEmployees: Employee[] = [
     firstName: 'Michael',
     lastName: 'Chen',
     email: 'michael.chen@company.com',
-    phone: '+1-555-0102',
+    phone: '+62-813-4567-8901',
     departmentId: 'dept-2',
     positionId: 'pos-3',
     hireDate: new Date('2024-01-15'),
-    salary: 85000,
+    salary: 168000000, // IDR 168 million/year
     status: 'active',
   },
   {
@@ -31,11 +31,11 @@ export const dummyEmployees: Employee[] = [
     firstName: 'Emily',
     lastName: 'Davis',
     email: 'emily.davis@company.com',
-    phone: '+1-555-0103',
+    phone: '+62-814-5678-9012',
     departmentId: 'dept-3',
     positionId: 'pos-6',
     hireDate: new Date('2024-01-15'),
-    salary: 80000,
+    salary: 156000000, // IDR 156 million/year
     status: 'active',
   },
   {
@@ -43,11 +43,11 @@ export const dummyEmployees: Employee[] = [
     firstName: 'James',
     lastName: 'Wilson',
     email: 'james.wilson@company.com',
-    phone: '+1-555-0104',
+    phone: '+62-815-6789-0123',
     departmentId: 'dept-4',
     positionId: 'pos-8',
     hireDate: new Date('2024-01-20'),
-    salary: 70000,
+    salary: 132000000, // IDR 132 million/year
     status: 'active',
   },
   {
@@ -55,11 +55,11 @@ export const dummyEmployees: Employee[] = [
     firstName: 'Lisa',
     lastName: 'Anderson',
     email: 'lisa.anderson@company.com',
-    phone: '+1-555-0105',
+    phone: '+62-816-7890-1234',
     departmentId: 'dept-5',
     positionId: 'pos-10',
     hireDate: new Date('2024-02-01'),
-    salary: 78000,
+    salary: 144000000, // IDR 144 million/year
     status: 'active',
   },
   {
@@ -67,11 +67,11 @@ export const dummyEmployees: Employee[] = [
     firstName: 'David',
     lastName: 'Brown',
     email: 'david.brown@company.com',
-    phone: '+1-555-0106',
+    phone: '+62-817-8901-2345',
     departmentId: 'dept-2',
     positionId: 'pos-4',
     hireDate: new Date('2024-02-15'),
-    salary: 65000,
+    salary: 120000000, // IDR 120 million/year
     status: 'active',
   },
   {
@@ -79,11 +79,11 @@ export const dummyEmployees: Employee[] = [
     firstName: 'Jessica',
     lastName: 'Taylor',
     email: 'jessica.taylor@company.com',
-    phone: '+1-555-0107',
+    phone: '+62-818-9012-3456',
     departmentId: 'dept-1',
     positionId: 'pos-2',
     hireDate: new Date('2024-03-01'),
-    salary: 45000,
+    salary: 96000000, // IDR 96 million/year
     status: 'active',
   },
   {
@@ -91,11 +91,11 @@ export const dummyEmployees: Employee[] = [
     firstName: 'Robert',
     lastName: 'Martinez',
     email: 'robert.martinez@company.com',
-    phone: '+1-555-0108',
+    phone: '+62-819-0123-4567',
     departmentId: 'dept-2',
     positionId: 'pos-5',
     hireDate: new Date('2024-03-15'),
-    salary: 60000,
+    salary: 114000000, // IDR 114 million/year
     status: 'active',
   },
   {
@@ -103,11 +103,11 @@ export const dummyEmployees: Employee[] = [
     firstName: 'Amanda',
     lastName: 'Garcia',
     email: 'amanda.garcia@company.com',
-    phone: '+1-555-0109',
+    phone: '+62-820-1234-5678',
     departmentId: 'dept-3',
     positionId: 'pos-7',
     hireDate: new Date('2024-04-01'),
-    salary: 55000,
+    salary: 108000000, // IDR 108 million/year
     status: 'active',
   },
   {
@@ -115,11 +115,11 @@ export const dummyEmployees: Employee[] = [
     firstName: 'Christopher',
     lastName: 'Lee',
     email: 'christopher.lee@company.com',
-    phone: '+1-555-0110',
+    phone: '+62-821-2345-6789',
     departmentId: 'dept-4',
     positionId: 'pos-9',
     hireDate: new Date('2024-04-15'),
-    salary: 50000,
+    salary: 102000000, // IDR 102 million/year
     status: 'active',
   },
   {
@@ -127,11 +127,11 @@ export const dummyEmployees: Employee[] = [
     firstName: 'Michelle',
     lastName: 'White',
     email: 'michelle.white@company.com',
-    phone: '+1-555-0111',
+    phone: '+62-822-3456-7890',
     departmentId: 'dept-2',
     positionId: 'pos-4',
     hireDate: new Date('2024-05-01'),
-    salary: 67000,
+    salary: 126000000, // IDR 126 million/year
     status: 'inactive',
   },
 ];
