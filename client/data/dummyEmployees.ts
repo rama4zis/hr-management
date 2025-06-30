@@ -3,9 +3,9 @@ import { Employee } from '@/model/Employee';
 export const dummyEmployees: Employee[] = [
   {
     id: 'emp-1',
-    firstName: 'Sarah',
-    lastName: 'Johnson',
-    email: 'sarah.johnson@company.com',
+    firstName: 'Camellya',
+    lastName: 'Sarah',
+    email: 'camellya.sarah@company.com',
     phone: '+62-812-3456-7890',
     departmentId: 'dept-1',
     positionId: 'pos-1',
