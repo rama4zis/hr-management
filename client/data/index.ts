@@ -56,3 +56,7 @@ export const getEmployeeName = (employeeId: string) => {
   const employee = dummyEmployees.find(emp => emp.id === employeeId);
   return employee ? `${employee.firstName} ${employee.lastName}` : 'Unknown';
 };
+
+export const getEmployeeProfileImage = (employeeId: string) => {
+  return dummyEmployees.find(emp => emp.id === employeeId)?.profileImage || '';
+};

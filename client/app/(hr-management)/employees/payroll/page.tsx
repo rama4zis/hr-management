@@ -21,7 +21,7 @@ import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
 import dayjs from 'dayjs';
-import { dummyPayroll, getEmployeeName } from '../../../../data';
+import { dummyPayroll, getEmployeeName, getEmployeeProfileImage } from '../../../../data';
 import DataTable, { TableColumn, StatusChip, formatCurrency, formatDate } from '../../../../components/DataTable';
 import { Payroll } from '../../../../model/Payroll';
 
@@ -41,6 +41,7 @@ export default function PayrollPage() {
       .map((payroll) => ({
         ...payroll,
         employeeName: getEmployeeName(payroll.employeeId) || 'Unknown Employee',
+        employeeProfileImage: getEmployeeProfileImage(payroll.employeeId) || '',
       }));
   }, [selectedDate]);
 
@@ -90,7 +91,7 @@ export default function PayrollPage() {
   };
 
   // Define table columns
-  const columns: TableColumn<Payroll & { employeeName: string }>[] = [
+  const columns: TableColumn<Payroll & { employeeName: string, employeeProfileImage: string }>[] = [
     {
       id: 'employee',
       label: 'Employee',
@@ -104,7 +105,7 @@ export default function PayrollPage() {
 
         return (
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-            <Avatar sx={{ width: 35, height: 35 }}>{initials}</Avatar>
+            <Avatar sx={{ width: 35, height: 35 }} src={row.employeeProfileImage}>{initials}</Avatar>
             <Box>
               <Typography variant="subtitle2" fontWeight="medium">
                 {employeeName}

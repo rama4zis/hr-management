@@ -12,7 +12,7 @@ import { DatePicker } from "@mui/x-date-pickers/DatePicker";
 import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 import dayjs from "dayjs";
-import { dummyAttendance, getEmployeeName } from "../../../../data";
+import { dummyAttendance, getEmployeeName, getEmployeeProfileImage } from "../../../../data";
 import DataTable,
   { TableColumn, StatusChip, formatDate }
 from "@/components/DataTable";
@@ -34,6 +34,7 @@ export default function AttendancePage() {
       .map((attendance) => ({
         ...attendance,
         employeeName: getEmployeeName(attendance.employeeId) || "Unknown Employee",
+        employeeProfileImage: getEmployeeProfileImage(attendance.employeeId) || "",
       }));
   }, [selectedDate]);
 
@@ -70,7 +71,7 @@ export default function AttendancePage() {
   };
 
   // Define table columns
-  const columns: TableColumn<Attendance & { employeeName: string }>[] = [
+  const columns: TableColumn<Attendance & { employeeName: string, employeeProfileImage: string }>[] = [
     {
       id: "employee",
       label: "Employee",
@@ -84,7 +85,9 @@ export default function AttendancePage() {
 
         return (
           <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
-            <Avatar sx={{ width: 35, height: 35 }}>{initials}</Avatar>
+            <Avatar sx={{ width: 35, height: 35 }} src={row.employeeProfileImage}>
+              {initials}
+            </Avatar>
             <Box>
               <Typography variant="subtitle2" fontWeight="medium">
                 {employeeName}

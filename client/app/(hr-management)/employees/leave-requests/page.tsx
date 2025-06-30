@@ -20,7 +20,7 @@ import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
 import dayjs from 'dayjs';
-import { dummyLeaveRequests, getEmployeeName } from '../../../../data';
+import { dummyLeaveRequests, getEmployeeName, getEmployeeProfileImage } from '../../../../data';
 import DataTable, { TableColumn, StatusChip, formatDate } from '../../../../components/DataTable';
 import { LeaveRequest } from '../../../../model/LeaveRequest';
 
@@ -40,6 +40,7 @@ export default function LeaveRequestsPage() {
       .map((leaveRequest) => ({
         ...leaveRequest,
         employeeName: getEmployeeName(leaveRequest.employeeId) || 'Unknown Employee',
+        employeeProfileImage: getEmployeeProfileImage(leaveRequest.employeeId) || '',
         approverName: leaveRequest.approvedBy ? getEmployeeName(leaveRequest.approvedBy) : null,
       }));
   }, [selectedDate]);
@@ -81,7 +82,7 @@ export default function LeaveRequestsPage() {
   };
 
   // Define table columns
-  const columns: TableColumn<LeaveRequest & { employeeName: string; approverName: string | null }>[] = [
+  const columns: TableColumn<LeaveRequest & { employeeName: string, employeeProfileImage: string , approverName: string | null }>[] = [
     {
       id: 'employee',
       label: 'Employee',
@@ -95,7 +96,9 @@ export default function LeaveRequestsPage() {
 
         return (
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-            <Avatar sx={{ width: 35, height: 35 }}>{initials}</Avatar>
+            <Avatar sx={{ width: 35, height: 35 }} src={row.employeeProfileImage}>
+              {initials}
+            </Avatar>
             <Box>
               <Typography variant="subtitle2" fontWeight="medium">
                 {employeeName}
