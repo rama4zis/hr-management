@@ -43,6 +43,13 @@ public class Employee {
     @Column(nullable = false)
     private String phone;
     
+    @Size(max = 255, message = "Address must not exceed 255 characters")
+    @Column(length = 255)
+    private String address;
+    
+    @Column(name = "date_of_birth")
+    private LocalDate dateOfBirth;
+    
     @NotNull(message = "Department ID is required")
     @Column(name = "department_id", nullable = false)
     private String departmentId;
@@ -148,6 +155,22 @@ public class Employee {
     
     public void setPhone(String phone) {
         this.phone = phone;
+    }
+    
+    public String getAddress() {
+        return address;
+    }
+    
+    public void setAddress(String address) {
+        this.address = address;
+    }
+    
+    public LocalDate getDateOfBirth() {
+        return dateOfBirth;
+    }
+    
+    public void setDateOfBirth(LocalDate dateOfBirth) {
+        this.dateOfBirth = dateOfBirth;
     }
     
     public String getDepartmentId() {
