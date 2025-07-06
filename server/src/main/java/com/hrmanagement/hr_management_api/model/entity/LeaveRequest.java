@@ -1,10 +1,6 @@
 package com.hrmanagement.hr_management_api.model.entity;
 
 import java.time.LocalDate;
-import java.time.LocalDateTime;
-
-import org.hibernate.annotations.CreationTimestamp;
-
 import com.hrmanagement.hr_management_api.model.enums.LeaveRequestStatus;
 import com.hrmanagement.hr_management_api.model.enums.LeaveRequestType;
 
@@ -12,11 +8,11 @@ import jakarta.persistence.*;
 
 @Entity
 @Table(name = "leave_requests")
-public class LeaveRequest {
+public class LeaveRequest extends BaseEntity {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+    @GeneratedValue(strategy = GenerationType.UUID)
+    private String id;
 
     @Column(name = "employee_id", nullable = false)
     private String employeeId;
@@ -53,13 +49,6 @@ public class LeaveRequest {
     @Column(name = "comments", length = 500)
     private String comments;
 
-    @CreationTimestamp
-    @Column(name = "created_at", nullable = false, updatable = false)
-    private LocalDateTime createdAt;
-
-    @Column(name = "updated_at")
-    private LocalDateTime updatedAt;
-
     // ManyToOne relationship with Employee
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "employee_id", insertable = false, updatable = false)
@@ -84,11 +73,11 @@ public class LeaveRequest {
         this.requestDate = requestDate;
     }
 
-    public Long getId() {
+    public String getId() {
         return id;
     }
 
-    public void setId(Long id) {
+    public void setId(String id) {
         this.id = id;
     }
 
@@ -180,22 +169,6 @@ public class LeaveRequest {
         this.comments = comments;
     }
 
-    public LocalDateTime getCreatedAt() {
-        return createdAt;
-    }
-
-    public void setCreatedAt(LocalDateTime createdAt) {
-        this.createdAt = createdAt;
-    }
-
-    public LocalDateTime getUpdatedAt() {
-        return updatedAt;
-    }
-
-    public void setUpdatedAt(LocalDateTime updatedAt) {
-        this.updatedAt = updatedAt;
-    }
-
     public Employee getEmployee() {
         return employee;
     }
@@ -212,6 +185,5 @@ public class LeaveRequest {
         this.approver = approver;
     }
 
-    // Getters and Setters
     
 }

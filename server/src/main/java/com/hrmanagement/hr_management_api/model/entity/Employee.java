@@ -5,32 +5,37 @@ import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.hibernate.annotations.CreationTimestamp;
-import org.hibernate.annotations.UpdateTimestamp;
-
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.hrmanagement.hr_management_api.model.enums.EmployeeStatus;
 
 import jakarta.persistence.*;
+import jakarta.validation.constraints.Email;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.DecimalMin;
 import jakarta.validation.constraints.Size;
 
 @Entity
 @Table(name = "employees")
-public class Employee {
+public class Employee extends BaseEntity {
     
 
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @GeneratedValue(strategy = GenerationType.UUID)
     private String id;
 
+    @NotBlank
     @Size(max = 50)
     @Column(name = "first_name", nullable = false)
     private String firstName;
 
+    @NotBlank
     @Size(max = 50)
     @Column(name = "last_name", nullable = false)
     private String lastName;
 
-    @Column(name = "email", nullable = false)
+    @Email
+    @NotBlank
+    @Column(name = "email", nullable = false, unique = true)
     private String email;
 
     @Column(name = "phone_number")
@@ -48,6 +53,7 @@ public class Employee {
     @Column(name = "hire_date", nullable = false)
     private LocalDate hireDate;
     
+    @DecimalMin("0.0")
     @Column(name = "salary")
     private BigDecimal salary;
 
@@ -57,14 +63,6 @@ public class Employee {
 
     @Column(name = "profile_image")
     private String profileImage;
-
-    @CreationTimestamp
-    @Column(name = "created_at", nullable = false, updatable = false)
-    private LocalDate createdAt;
-
-    @UpdateTimestamp
-    @Column(name = "updated_at")
-    private LocalDate updatedAt;
 
     // Many-to-one relationship with Department
     @ManyToOne
@@ -77,12 +75,15 @@ public class Employee {
     private Position position;
 
     // One-to-many relationships
+    @JsonIgnore
     @OneToMany(mappedBy = "employee", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     private List<Attendance> attendances = new ArrayList<>();
 
+    @JsonIgnore
     @OneToMany(mappedBy = "employee", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     private List<LeaveRequest> leaveRequests = new ArrayList<>();
 
+    @JsonIgnore
     @OneToMany(mappedBy = "employee", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     private List<Payroll> payrolls = new ArrayList<>();
 
@@ -201,22 +202,6 @@ public class Employee {
         this.profileImage = profileImage;
     }
 
-    public LocalDate getCreatedAt() {
-        return createdAt;
-    }
-
-    public void setCreatedAt(LocalDate createdAt) {
-        this.createdAt = createdAt;
-    }
-
-    public LocalDate getUpdatedAt() {
-        return updatedAt;
-    }
-
-    public void setUpdatedAt(LocalDate updatedAt) {
-        this.updatedAt = updatedAt;
-    }
-
     public Department getDepartment() {
         return department;
     }
@@ -256,8 +241,24 @@ public class Employee {
     public void setPayrolls(List<Payroll> payrolls) {
         this.payrolls = payrolls;
     }
-
     
-
-
+    // Business Logic Methods
+    public String getFullName() {
+        return firstName + " " + lastName;
+    }
+    
+    public boolean isActive() {
+        return employeeStatus == EmployeeStatus.ACTIVE;
+    }
+    
+    public int getYearsOfService() {
+        return java.time.Period.between(hireDate, java.time.LocalDate.now()).getYears();
+    }
+    
+    @PrePersist
+    private void prePersist() {
+        if (employeeStatus == null) {
+            employeeStatus = EmployeeStatus.ACTIVE;
+        }
+    }
 }

@@ -3,18 +3,16 @@ package com.hrmanagement.hr_management_api.model.entity;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 
-import org.hibernate.annotations.CreationTimestamp;
-
 import com.hrmanagement.hr_management_api.model.enums.AttendanceStatus;
 
 import jakarta.persistence.*;
 
 @Entity
 @Table(name = "attendances")
-public class Attendance {
+public class Attendance extends BaseEntity {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @GeneratedValue(strategy = GenerationType.UUID)
     private String id;
 
     @Column(name = "employee_id", nullable = false)
@@ -35,13 +33,6 @@ public class Attendance {
 
     @Column(name = "notes")
     private String notes;
-
-    @CreationTimestamp
-    @Column(name = "created_at", nullable = false, updatable = false)
-    private LocalDateTime createdAt;
-
-    @Column(name = "updated_at")
-    private LocalDateTime updatedAt;
 
     // ManyToOne relationship with Employee
     @ManyToOne(fetch = FetchType.LAZY)
@@ -104,22 +95,6 @@ public class Attendance {
         this.notes = notes;
     }
 
-    public LocalDateTime getCreatedAt() {
-        return createdAt;
-    }
-
-    public void setCreatedAt(LocalDateTime createdAt) {
-        this.createdAt = createdAt;
-    }
-
-    public LocalDateTime getUpdatedAt() {
-        return updatedAt;
-    }
-
-    public void setUpdatedAt(LocalDateTime updatedAt) {
-        this.updatedAt = updatedAt;
-    }
-
     public Employee getEmployee() {
         return employee;
     }
@@ -127,7 +102,5 @@ public class Attendance {
     public void setEmployee(Employee employee) {
         this.employee = employee;
     }
-
-    
 
 }

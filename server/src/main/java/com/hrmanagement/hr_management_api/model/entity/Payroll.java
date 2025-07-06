@@ -4,18 +4,16 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 
-import org.hibernate.annotations.CreationTimestamp;
-
 import com.hrmanagement.hr_management_api.model.enums.PayrollStatus;
 
 import jakarta.persistence.*;
 
 @Entity
 @Table(name = "payrolls")
-public class Payroll {
+public class Payroll extends BaseEntity {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @GeneratedValue(strategy = GenerationType.UUID)
     private String id;
 
     @Column(name = "employee_id", nullable = false)
@@ -48,13 +46,6 @@ public class Payroll {
 
     @Column(name = "paid_date")
     private LocalDateTime paidDate;
-
-    @CreationTimestamp
-    @Column(name = "created_at", nullable = false, updatable = false)
-    private LocalDateTime createdAt;
-
-    @Column(name = "updated_at")
-    private LocalDateTime updatedAt;
 
     // ManyToOne relationship with Employee
     @ManyToOne(fetch = FetchType.LAZY)
@@ -162,22 +153,6 @@ public class Payroll {
         this.paidDate = paidDate;
     }
 
-    public LocalDateTime getCreatedAt() {
-        return createdAt;
-    }
-
-    public void setCreatedAt(LocalDateTime createdAt) {
-        this.createdAt = createdAt;
-    }
-
-    public LocalDateTime getUpdatedAt() {
-        return updatedAt;
-    }
-
-    public void setUpdatedAt(LocalDateTime updatedAt) {
-        this.updatedAt = updatedAt;
-    }
-
     public Employee getEmployee() {
         return employee;
     }
@@ -186,8 +161,5 @@ public class Payroll {
         this.employee = employee;
     }
 
-    // Getters and Setters
-
-    
     
 }

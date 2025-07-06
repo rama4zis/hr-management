@@ -1,16 +1,13 @@
 package com.hrmanagement.hr_management_api.model.entity;
 
-import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
-
-import org.hibernate.annotations.CreationTimestamp;
 
 import jakarta.persistence.*;
 
 @Entity
 @Table(name = "departments")
-public class Department {
+public class Department extends BaseEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
@@ -24,13 +21,6 @@ public class Department {
 
     @Column(name = "manager_id")
     private String managerId;
-
-    @CreationTimestamp
-    @Column(name = "created_at", nullable = false, updatable = false)
-    private LocalDate createdAt;
-
-    @Column(name = "updated_at")
-    private LocalDate updatedAt;
 
     // One-to-many relationship with Employee
     @OneToMany(mappedBy = "department", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
@@ -83,22 +73,6 @@ public class Department {
         this.managerId = managerId;
     }
 
-    public LocalDate getCreatedAt() {
-        return createdAt;
-    }
-
-    public void setCreatedAt(LocalDate createdAt) {
-        this.createdAt = createdAt;
-    }
-
-    public LocalDate getUpdatedAt() {
-        return updatedAt;
-    }
-
-    public void setUpdatedAt(LocalDate updatedAt) {
-        this.updatedAt = updatedAt;
-    }
-
     public List<Employee> getEmployees() {
         return employees;
     }
@@ -122,7 +96,5 @@ public class Department {
     public void setManager(Employee manager) {
         this.manager = manager;
     }
-
-    
 
 }
