@@ -76,6 +76,7 @@ public class User extends BaseEntity {
         this.userRole = userRole;
     }
 
+    @JsonIgnore
     public boolean isActive() {
         return isActive;
     }
