@@ -66,32 +66,34 @@ public class DataLoder {
         }
     }
 
-    private Department createDepartment(String id, String name, String description) {
-        Department dept = new Department(name, description);
-        dept.setId(id);
-        return departmentRepository.save(dept);
-    }
-
     private void loadDepartments() {
-        List<Department> departments = List.of(
-                createDepartment("dep-001", "Human Resources", "Handles employee relations and benefits"),
-                createDepartment("dep-002", "Information Technology", "Manages IT infrastructure and support"),
-                createDepartment("dep-003", "Design", "Responsible for product design and user experience"),
-                createDepartment("dep-004", "Marketing", "Oversees marketing strategies and campaigns"));
-        departmentRepository.saveAll(departments);
+        // Save departments one by one to avoid ID conflicts
+        Department dept1 = new Department("Human Resources", "Handles employee relations and benefits");
+        dept1 = departmentRepository.save(dept1);
+
+        Department dept2 = new Department("Information Technology", "Manages IT infrastructure and support");
+        dept2 = departmentRepository.save(dept2);
+
+        Department dept3 = new Department("Design", "Responsible for product design and user experience");
+        dept3 = departmentRepository.save(dept3);
+
+        Department dept4 = new Department("Marketing", "Oversees marketing strategies and campaigns");
+        dept4 = departmentRepository.save(dept4);
     }
 
     private void loadPositions() {
-        List<Position> positions = List.of(
-                new Position("Software Engineer", "Develops and maintains software applications", "IT"),
-                new Position("HR Manager", "Manages HR operations and employee relations", "Human Resources"),
-                new Position("UI/UX Designer", "Designs user interfaces and experiences", "Design"),
-                new Position("Marketing Specialist", "Develops marketing campaigns and strategies", "Marketing"));
+        // Get the saved departments first
+        List<Department> departments = departmentRepository.findAll();
+        Department itDept = departments.stream().filter(d -> d.getName().equals("Information Technology")).findFirst().orElse(null);
+        Department hrDept = departments.stream().filter(d -> d.getName().equals("Human Resources")).findFirst().orElse(null);
+        Department designDept = departments.stream().filter(d -> d.getName().equals("Design")).findFirst().orElse(null);
+        Department marketingDept = departments.stream().filter(d -> d.getName().equals("Marketing")).findFirst().orElse(null);
 
-        positions.get(0).setId("pos-001");
-        positions.get(1).setId("pos-002");
-        positions.get(2).setId("pos-003");
-        positions.get(3).setId("pos-004");
+        List<Position> positions = List.of(
+                new Position("Software Engineer", "Develops and maintains software applications", itDept != null ? itDept.getId() : "IT"),
+                new Position("HR Manager", "Manages HR operations and employee relations", hrDept != null ? hrDept.getId() : "Human Resources"),
+                new Position("UI/UX Designer", "Designs user interfaces and experiences", designDept != null ? designDept.getId() : "Design"),
+                new Position("Marketing Specialist", "Develops marketing campaigns and strategies", marketingDept != null ? marketingDept.getId() : "Marketing"));
 
         positionRepository.saveAll(positions);
     }
@@ -115,109 +117,155 @@ public class DataLoder {
     }
 
     private void loadEmployees() {
+        // Get the saved departments and positions
+        List<Department> departments = departmentRepository.findAll();
+        List<Position> positions = positionRepository.findAll();
+        
+        Department hrDept = departments.stream().filter(d -> d.getName().equals("Human Resources")).findFirst().orElse(null);
+        Department itDept = departments.stream().filter(d -> d.getName().equals("Information Technology")).findFirst().orElse(null);
+        Department designDept = departments.stream().filter(d -> d.getName().equals("Design")).findFirst().orElse(null);
+        Department marketingDept = departments.stream().filter(d -> d.getName().equals("Marketing")).findFirst().orElse(null);
+        
+        Position swEngineerPos = positions.stream().filter(p -> p.getTitle().equals("Software Engineer")).findFirst().orElse(null);
+        Position hrManagerPos = positions.stream().filter(p -> p.getTitle().equals("HR Manager")).findFirst().orElse(null);
+        Position designerPos = positions.stream().filter(p -> p.getTitle().equals("UI/UX Designer")).findFirst().orElse(null);
+        Position marketingPos = positions.stream().filter(p -> p.getTitle().equals("Marketing Specialist")).findFirst().orElse(null);
+
         List<Employee> employees = List.of(
-                createEmployee("emp-001", "John", "Doe", "john.doe@example.com", "1234567890",
-                        "123 Main St, Anytown, USA", "dep-001", "pos-001", "2020-01-15", new BigDecimal("13000000.00")),
-                createEmployee("emp-002", "Jane", "Smith", "jane.smith@example.com", "0987654321",
-                        "456 Elm St, Othertown, USA", "dep-002", "pos-002", "2019-03-22",
+                createEmployee(null, "John", "Doe", "john.doe@example.com", "1234567890",
+                        "123 Main St, Anytown, USA", hrDept != null ? hrDept.getId() : null, swEngineerPos != null ? swEngineerPos.getId() : null, "2020-01-15", new BigDecimal("13000000.00")),
+                createEmployee(null, "Jane", "Smith", "jane.smith@example.com", "0987654321",
+                        "456 Elm St, Othertown, USA", itDept != null ? itDept.getId() : null, hrManagerPos != null ? hrManagerPos.getId() : null, "2019-03-22",
                         new BigDecimal("13000000.00")),
-                createEmployee("emp-003", "Alice", "Johnson", "alice.johnson@example.com", "5555555555",
-                        "789 Oak St, Sometown, USA", "dep-003", "pos-003", "2021-07-30", new BigDecimal("13000000.00")),
-                createEmployee("emp-004", "Bob", "Brown", "bob.brown@example.com", "4444444444",
-                        "321 Pine St, Anycity, USA", "dep-004", "pos-004", "2018-11-05",
+                createEmployee(null, "Alice", "Johnson", "alice.johnson@example.com", "5555555555",
+                        "789 Oak St, Sometown, USA", designDept != null ? designDept.getId() : null, designerPos != null ? designerPos.getId() : null, "2021-07-30", new BigDecimal("13000000.00")),
+                createEmployee(null, "Bob", "Brown", "bob.brown@example.com", "4444444444",
+                        "321 Pine St, Anycity, USA", marketingDept != null ? marketingDept.getId() : null, marketingPos != null ? marketingPos.getId() : null, "2018-11-05",
                         new BigDecimal("13000000.00")));
         employeeRepository.saveAll(employees);
     }
 
     private User createUser(String id, String username, String password, String employeeId, UserRole role) {
         User user = new User();
-        user.setId(id);
+        if (id != null) {
+            user.setId(id);
+        }
         user.setUsername(username);
         user.setPassword(password);
         user.setEmployeeId(employeeId);
         user.setUserRole(role);
         user.setActive(true);
-        return userRepository.save(user);
+        return user;
     }
 
     private void loadUsers() {
+        // Get the saved employees
+        List<Employee> employees = employeeRepository.findAll();
+        Employee johnDoe = employees.stream().filter(e -> e.getFirstName().equals("John") && e.getLastName().equals("Doe")).findFirst().orElse(null);
+        Employee janeSmith = employees.stream().filter(e -> e.getFirstName().equals("Jane") && e.getLastName().equals("Smith")).findFirst().orElse(null);
+        Employee aliceJohnson = employees.stream().filter(e -> e.getFirstName().equals("Alice") && e.getLastName().equals("Johnson")).findFirst().orElse(null);
+        Employee bobBrown = employees.stream().filter(e -> e.getFirstName().equals("Bob") && e.getLastName().equals("Brown")).findFirst().orElse(null);
+
         List<User> users = List.of(
-                createUser("user-001", "admin", "admin123", "emp-001", UserRole.ADMIN),
-                createUser("user-002", "hr_user", "hr123", "emp-002", UserRole.HR),
-                createUser("user-003", "employee_user", "emp123", "emp-003", UserRole.EMPLOYEE),
-                createUser("user-004", "marketing_user", "marketing123", "emp-004", UserRole.EMPLOYEE));
+                createUser(null, "admin", "admin123", johnDoe != null ? johnDoe.getId() : null, UserRole.ADMIN),
+                createUser(null, "hr_user", "hr123", janeSmith != null ? janeSmith.getId() : null, UserRole.HR),
+                createUser(null, "employee_user", "emp123", aliceJohnson != null ? aliceJohnson.getId() : null, UserRole.EMPLOYEE),
+                createUser(null, "marketing_user", "marketing123", bobBrown != null ? bobBrown.getId() : null, UserRole.EMPLOYEE));
         userRepository.saveAll(users);
     }
 
     private Attendance createAttendance(String id, String employeeId, LocalDate date, LocalDateTime clockIn,
             LocalDateTime clockOut, String status, String notes) {
         Attendance attendance = new Attendance();
-        attendance.setId(id);
+        if (id != null) {
+            attendance.setId(id);
+        }
         attendance.setEmployeeId(employeeId);
         attendance.setDate(date);
         attendance.setClockIn(clockIn);
         attendance.setClockOut(clockOut);
         attendance.setAttendanceStatus(AttendanceStatus.valueOf(status));
         attendance.setNotes(notes);
-        return attendanceRepository.save(attendance);
+        return attendance;
     }
 
     private void loadAttendanceData() {
+        // Get the saved employees
+        List<Employee> employees = employeeRepository.findAll();
+        Employee johnDoe = employees.stream().filter(e -> e.getFirstName().equals("John") && e.getLastName().equals("Doe")).findFirst().orElse(null);
+        Employee janeSmith = employees.stream().filter(e -> e.getFirstName().equals("Jane") && e.getLastName().equals("Smith")).findFirst().orElse(null);
+        Employee aliceJohnson = employees.stream().filter(e -> e.getFirstName().equals("Alice") && e.getLastName().equals("Johnson")).findFirst().orElse(null);
+        Employee bobBrown = employees.stream().filter(e -> e.getFirstName().equals("Bob") && e.getLastName().equals("Brown")).findFirst().orElse(null);
+
         List<Attendance> attendances = List.of(
-                createAttendance("att-001", "emp-001", LocalDate.of(2023, 1, 1), LocalDateTime.of(2023, 1, 1, 9, 0),
+                createAttendance(null, johnDoe != null ? johnDoe.getId() : null, LocalDate.of(2023, 1, 1), LocalDateTime.of(2023, 1, 1, 9, 0),
                         LocalDateTime.of(2023, 1, 1, 17, 0), "PRESENT", "On time"),
-                createAttendance("att-002", "emp-002", LocalDate.of(2023, 1, 1), LocalDateTime.of(2023, 1, 1, 9, 0),
+                createAttendance(null, janeSmith != null ? janeSmith.getId() : null, LocalDate.of(2023, 1, 1), LocalDateTime.of(2023, 1, 1, 9, 0),
                         LocalDateTime.of(2023, 1, 1, 17, 0), "PRESENT", "On time"),
-                createAttendance("att-003", "emp-003", LocalDate.of(2023, 1, 1), LocalDateTime.of(2023, 1, 1, 9, 0),
+                createAttendance(null, aliceJohnson != null ? aliceJohnson.getId() : null, LocalDate.of(2023, 1, 1), LocalDateTime.of(2023, 1, 1, 9, 0),
                         LocalDateTime.of(2023, 1, 1, 17, 0), "PRESENT", "On time"),
-                createAttendance("att-004", "emp-004", LocalDate.of(2023, 1, 1), LocalDateTime.of(2023, 1, 1, 9, 0),
+                createAttendance(null, bobBrown != null ? bobBrown.getId() : null, LocalDate.of(2023, 1, 1), LocalDateTime.of(2023, 1, 1, 9, 0),
                         LocalDateTime.of(2023, 1, 1, 17, 0), "PRESENT", "On time"));
         attendanceRepository.saveAll(attendances);
     }
 
     private void loadLeaveRequestsData() {
+        // Get the saved employees
+        List<Employee> employees = employeeRepository.findAll();
+        Employee johnDoe = employees.stream().filter(e -> e.getFirstName().equals("John") && e.getLastName().equals("Doe")).findFirst().orElse(null);
+        Employee janeSmith = employees.stream().filter(e -> e.getFirstName().equals("Jane") && e.getLastName().equals("Smith")).findFirst().orElse(null);
+        Employee aliceJohnson = employees.stream().filter(e -> e.getFirstName().equals("Alice") && e.getLastName().equals("Johnson")).findFirst().orElse(null);
+        Employee bobBrown = employees.stream().filter(e -> e.getFirstName().equals("Bob") && e.getLastName().equals("Brown")).findFirst().orElse(null);
+
         List<LeaveRequest> leaveRequests = List.of(
-                new LeaveRequest("emp-001", LeaveRequestType.SICK, LocalDate.of(2023, 1, 10),
+                new LeaveRequest(johnDoe != null ? johnDoe.getId() : null, LeaveRequestType.SICK, LocalDate.of(2023, 1, 10),
                         LocalDate.of(2023, 1, 12), 3, "Flu symptoms", LocalDate.now()),
-                new LeaveRequest("emp-002", LeaveRequestType.PERSONAL, LocalDate.of(2023, 2, 5),
+                new LeaveRequest(janeSmith != null ? janeSmith.getId() : null, LeaveRequestType.PERSONAL, LocalDate.of(2023, 2, 5),
                         LocalDate.of(2023, 2, 10), 6, "Tournament Valorant", LocalDate.now()),
-                new LeaveRequest("emp-003", LeaveRequestType.PERSONAL, LocalDate.of(2023, 3, 15),
+                new LeaveRequest(aliceJohnson != null ? aliceJohnson.getId() : null, LeaveRequestType.PERSONAL, LocalDate.of(2023, 3, 15),
                         LocalDate.of(2023, 3, 16), 2, "Personal matters", LocalDate.now()),
-                new LeaveRequest("emp-004", LeaveRequestType.SICK, LocalDate.of(2023, 4, 20),
+                new LeaveRequest(bobBrown != null ? bobBrown.getId() : null, LeaveRequestType.SICK, LocalDate.of(2023, 4, 20),
                         LocalDate.of(2023, 4, 22), 3, "Medical appointment", LocalDate.now()));
         leaveRequestRepository.saveAll(leaveRequests);
     }
 
     private void loadPayrollData() {
+        // Get the saved employees
+        List<Employee> employees = employeeRepository.findAll();
+        Employee johnDoe = employees.stream().filter(e -> e.getFirstName().equals("John") && e.getLastName().equals("Doe")).findFirst().orElse(null);
+        Employee janeSmith = employees.stream().filter(e -> e.getFirstName().equals("Jane") && e.getLastName().equals("Smith")).findFirst().orElse(null);
+        Employee aliceJohnson = employees.stream().filter(e -> e.getFirstName().equals("Alice") && e.getLastName().equals("Johnson")).findFirst().orElse(null);
+        Employee bobBrown = employees.stream().filter(e -> e.getFirstName().equals("Bob") && e.getLastName().equals("Brown")).findFirst().orElse(null);
+
         List<Payroll> payrolls = List.of(
-                new Payroll("emp-001", LocalDate.of(2023, 1, 1), LocalDate.of(2023, 2, 1),
+                new Payroll(johnDoe != null ? johnDoe.getId() : null, LocalDate.of(2023, 1, 1), LocalDate.of(2023, 2, 1),
                         new BigDecimal("13000000.00"),
                         new BigDecimal("1000000.00"), new BigDecimal("500000.00")),
-                new Payroll("emp-002", LocalDate.of(2023, 1, 31), LocalDate.of(2023, 2, 28),
+                new Payroll(janeSmith != null ? janeSmith.getId() : null, LocalDate.of(2023, 1, 31), LocalDate.of(2023, 2, 28),
                         new BigDecimal("13000000.00"),
                         new BigDecimal("1000000.00"), new BigDecimal("500000.00")),
-                new Payroll("emp-003", LocalDate.of(2023, 1, 31), LocalDate.of(2023, 2, 28),
+                new Payroll(aliceJohnson != null ? aliceJohnson.getId() : null, LocalDate.of(2023, 1, 31), LocalDate.of(2023, 2, 28),
                         new BigDecimal("13000000.00"),
                         new BigDecimal("1000000.00"), new BigDecimal("500000.00")),
-                new Payroll("emp-004", LocalDate.of(2023, 1, 31), LocalDate.of(2023, 2, 28),
+                new Payroll(bobBrown != null ? bobBrown.getId() : null, LocalDate.of(2023, 1, 31), LocalDate.of(2023, 2, 28),
                         new BigDecimal("13000000.00"),
                         new BigDecimal("1000000.00"), new BigDecimal("500000.00")),
-                new Payroll("emp-001", LocalDate.of(2023, 2, 28), LocalDate.of(2023, 3, 31),
+                new Payroll(johnDoe != null ? johnDoe.getId() : null, LocalDate.of(2023, 2, 28), LocalDate.of(2023, 3, 31),
                         new BigDecimal("13000000.00"),
                         new BigDecimal("1200000.00"), new BigDecimal("600000.00")),
-                new Payroll("emp-002", LocalDate.of(2023, 2, 28), LocalDate.of(2023, 3, 31),
+                new Payroll(janeSmith != null ? janeSmith.getId() : null, LocalDate.of(2023, 2, 28), LocalDate.of(2023, 3, 31),
                         new BigDecimal("13000000.00"),
                         new BigDecimal("1200000.00"), new BigDecimal("600000.00")),
-                new Payroll("emp-003", LocalDate.of(2023, 2, 28), LocalDate.of(2023, 3, 31),
+                new Payroll(aliceJohnson != null ? aliceJohnson.getId() : null, LocalDate.of(2023, 2, 28), LocalDate.of(2023, 3, 31),
                         new BigDecimal("13000000.00"),
                         new BigDecimal("1200000.00"), new BigDecimal("600000.00")),
-                new Payroll("emp-004", LocalDate.of(2023, 2, 1), LocalDate.of(2023, 3, 1),
+                new Payroll(bobBrown != null ? bobBrown.getId() : null, LocalDate.of(2023, 2, 1), LocalDate.of(2023, 3, 1),
                         new BigDecimal("13000000.00"),
                         new BigDecimal("1200000.00"), new BigDecimal("600000.00")),
-                new Payroll("emp-001", LocalDate.of(2023, 3, 1), LocalDate.of(2023, 4, 1),
+                new Payroll(johnDoe != null ? johnDoe.getId() : null, LocalDate.of(2023, 3, 1), LocalDate.of(2023, 4, 1),
                         new BigDecimal("13000000.00"),
                         new BigDecimal("1100000.00"), new BigDecimal("550000.00")),
-                new Payroll("emp-002", LocalDate.of(2023, 3, 1), LocalDate.of(2023, 4, 1),
+                new Payroll(janeSmith != null ? janeSmith.getId() : null, LocalDate.of(2023, 3, 1), LocalDate.of(2023, 4, 1),
                         new BigDecimal("13000000.00"),
                         new BigDecimal("1100000.00"), new BigDecimal("550000.00")));
         payrollRepository.saveAll(payrolls);

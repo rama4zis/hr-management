@@ -2,6 +2,7 @@ package com.hrmanagement.hr_management_api.controller;
 
 import java.util.List;
 
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -17,7 +18,7 @@ public class UserController {
         this.userRepository = userRepository;
     }
 
-    @RequestMapping
+    @GetMapping("/")
     public List<User> getAllUsers() {
         return userRepository.findAll();
     }
