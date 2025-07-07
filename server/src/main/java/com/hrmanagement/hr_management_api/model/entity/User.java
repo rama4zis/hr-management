@@ -1,5 +1,6 @@
 package com.hrmanagement.hr_management_api.model.entity;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.hrmanagement.hr_management_api.model.enums.UserRole;
 
 import jakarta.persistence.*;
@@ -15,6 +16,7 @@ public class User extends BaseEntity {
     @Column(nullable = false)
     private String username;
 
+    @JsonIgnore
     @Column(nullable = false)
     private String password;
 
@@ -29,6 +31,7 @@ public class User extends BaseEntity {
     private boolean isActive = true;
 
     // One-to-One relationship with Employee
+    @JsonIgnore
     @OneToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "employee_id", referencedColumnName = "id", insertable = false, updatable = false)
     private Employee employee;

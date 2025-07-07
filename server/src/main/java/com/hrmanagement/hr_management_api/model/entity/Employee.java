@@ -65,12 +65,14 @@ public class Employee extends BaseEntity {
     private String profileImage;
 
     // Many-to-one relationship with Department
-    @ManyToOne
+    @JsonIgnore
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "department_id", referencedColumnName = "id", insertable = false, updatable = false)
     private Department department;
 
     // Many-to-one relationship with Position
-    @ManyToOne
+    @JsonIgnore
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "position_id", referencedColumnName = "id", insertable = false, updatable = false)
     private Position position;
 
@@ -245,14 +247,6 @@ public class Employee extends BaseEntity {
     // Business Logic Methods
     public String getFullName() {
         return firstName + " " + lastName;
-    }
-    
-    public boolean isActive() {
-        return employeeStatus == EmployeeStatus.ACTIVE;
-    }
-    
-    public int getYearsOfService() {
-        return java.time.Period.between(hireDate, java.time.LocalDate.now()).getYears();
     }
     
     @PrePersist
