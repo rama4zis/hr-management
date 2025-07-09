@@ -16,7 +16,6 @@ public class User extends BaseEntity {
     @Column(nullable = false)
     private String username;
 
-    @JsonIgnore
     @Column(nullable = false)
     private String password;
 
@@ -26,15 +25,25 @@ public class User extends BaseEntity {
     @Enumerated(EnumType.STRING)
     @Column(name = "user_role", nullable = false)
     private UserRole userRole;
-    
-    @Column(name = "is_active", nullable = false)
-    private boolean isActive = true;
+
+    @Column(name = "is_active")
+    private Boolean isActive;
 
     // One-to-One relationship with Employee
-    @JsonIgnore
     @OneToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "employee_id", referencedColumnName = "id", insertable = false, updatable = false)
     private Employee employee;
+
+    // Constructors
+    public User() {
+    }
+
+    public User(String username, String password, String employeeId, UserRole userRole) {
+        this.username = username;
+        this.password = password;
+        this.employeeId = employeeId;
+        this.userRole = userRole;
+    }
 
     public String getId() {
         return id;
@@ -52,6 +61,7 @@ public class User extends BaseEntity {
         this.username = username;
     }
 
+    @JsonIgnore
     public String getPassword() {
         return password;
     }
@@ -85,6 +95,7 @@ public class User extends BaseEntity {
         this.isActive = isActive;
     }
 
+    @JsonIgnore
     public Employee getEmployee() {
         return employee;
     }
@@ -92,5 +103,11 @@ public class User extends BaseEntity {
     public void setEmployee(Employee employee) {
         this.employee = employee;
     }
-    
+
+    @PrePersist
+    private void prePersist() {
+        if (this.isActive == null) {
+            this.isActive = true; // Default to active if not set
+        }
+    }
 }

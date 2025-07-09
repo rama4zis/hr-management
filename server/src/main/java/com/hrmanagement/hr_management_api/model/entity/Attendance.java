@@ -2,7 +2,9 @@ package com.hrmanagement.hr_management_api.model.entity;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.LocalTime;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.hrmanagement.hr_management_api.model.enums.AttendanceStatus;
 
 import jakarta.persistence.*;
@@ -24,7 +26,7 @@ public class Attendance extends BaseEntity {
     @Column(name = "clock_in", nullable = false)
     private LocalDateTime clockIn;
 
-    @Column(name = "clock_out", nullable = false)
+    @Column(name = "clock_out")
     private LocalDateTime clockOut;
 
     @Enumerated(EnumType.STRING)
@@ -38,6 +40,15 @@ public class Attendance extends BaseEntity {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "employee_id", insertable = false, updatable = false)
     private Employee employee;
+
+    // Constructors
+    public Attendance() {}
+
+    public Attendance(String employeeId, LocalDate date, LocalDateTime clockIn) {
+        this.employeeId = employeeId;
+        this.date = date;
+        this.clockIn = clockIn;
+    }
 
     public String getId() {
         return id;
@@ -95,12 +106,27 @@ public class Attendance extends BaseEntity {
         this.notes = notes;
     }
 
+    @JsonIgnore
     public Employee getEmployee() {
         return employee;
     }
 
     public void setEmployee(Employee employee) {
         this.employee = employee;
+    }
+
+    @PrePersist
+    private void prePersist() {
+
+        // Present fot 09:00 AM or earlier
+        if (this.clockIn != null && this.clockIn.toLocalTime().isBefore(LocalDateTime.of(this.date, LocalTime.of(9, 0)).toLocalTime())) {
+            this.attendanceStatus = AttendanceStatus.PRESENT;
+        } else if (this.clockIn != null && this.clockIn.toLocalTime().isAfter(LocalDateTime.of(this.date, LocalTime.of(9, 0)).toLocalTime())) {
+            this.attendanceStatus = AttendanceStatus.LATE;
+        } else {
+            this.attendanceStatus = AttendanceStatus.ABSENT; // Default to ABSENT if clockIn is null
+        }
+
     }
 
 }

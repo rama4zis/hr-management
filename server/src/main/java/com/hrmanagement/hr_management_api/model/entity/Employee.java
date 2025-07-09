@@ -30,12 +30,12 @@ public class Employee extends BaseEntity {
 
     @NotBlank
     @Size(max = 50)
-    @Column(name = "last_name", nullable = false)
+    @Column(name = "last_name")
     private String lastName;
 
     @Email
     @NotBlank
-    @Column(name = "email", nullable = false, unique = true)
+    @Column(name = "email", unique = true)
     private String email;
 
     @Column(name = "phone_number")
@@ -58,34 +58,29 @@ public class Employee extends BaseEntity {
     private BigDecimal salary;
 
     @Enumerated(EnumType.STRING)
-    @Column(name = "employee_status", nullable = false)
+    @Column(name = "employee_status")
     private EmployeeStatus employeeStatus;
 
     @Column(name = "profile_image")
     private String profileImage;
 
     // Many-to-one relationship with Department
-    @JsonIgnore
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "department_id", referencedColumnName = "id", insertable = false, updatable = false)
     private Department department;
 
     // Many-to-one relationship with Position
-    @JsonIgnore
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "position_id", referencedColumnName = "id", insertable = false, updatable = false)
     private Position position;
 
     // One-to-many relationships
-    @JsonIgnore
     @OneToMany(mappedBy = "employee", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     private List<Attendance> attendances = new ArrayList<>();
 
-    @JsonIgnore
     @OneToMany(mappedBy = "employee", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     private List<LeaveRequest> leaveRequests = new ArrayList<>();
 
-    @JsonIgnore
     @OneToMany(mappedBy = "employee", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     private List<Payroll> payrolls = new ArrayList<>();
 
@@ -204,6 +199,7 @@ public class Employee extends BaseEntity {
         this.profileImage = profileImage;
     }
 
+    @JsonIgnore
     public Department getDepartment() {
         return department;
     }
@@ -220,6 +216,7 @@ public class Employee extends BaseEntity {
         this.position = position;
     }
 
+    @JsonIgnore
     public List<Attendance> getAttendances() {
         return attendances;
     }
@@ -228,6 +225,7 @@ public class Employee extends BaseEntity {
         this.attendances = attendances;
     }
 
+    @JsonIgnore
     public List<LeaveRequest> getLeaveRequests() {
         return leaveRequests;
     }
@@ -236,6 +234,7 @@ public class Employee extends BaseEntity {
         this.leaveRequests = leaveRequests;
     }
 
+    @JsonIgnore
     public List<Payroll> getPayrolls() {
         return payrolls;
     }
@@ -243,8 +242,9 @@ public class Employee extends BaseEntity {
     public void setPayrolls(List<Payroll> payrolls) {
         this.payrolls = payrolls;
     }
-    
-    // Business Logic Methods
+
+    // Custom method
+
     public String getFullName() {
         return firstName + " " + lastName;
     }

@@ -4,6 +4,7 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.hrmanagement.hr_management_api.model.enums.PayrollStatus;
 
 import jakarta.persistence.*;
@@ -22,10 +23,10 @@ public class Payroll extends BaseEntity {
     @Column(name = "pay_period_start", nullable = false)
     private LocalDate payPeriodStart;
 
-    @Column(name = "pay_period_end", nullable = false)
+    @Column(name = "pay_period_end")
     private LocalDate payPeriodEnd;
 
-    @Column(name = "salary", nullable = false, precision = 19, scale = 2)
+    @Column(name = "salary", precision = 19, scale = 2)
     private BigDecimal salary;
 
     @Column(name = "bonus", precision = 19, scale = 2)
@@ -34,12 +35,12 @@ public class Payroll extends BaseEntity {
     @Column(name = "deductions", precision = 19, scale = 2)
     private BigDecimal deductions;
 
-    @Column(name = "net_pay", nullable = false, precision = 19, scale = 2)
+    @Column(name = "net_pay", precision = 19, scale = 2)
     private BigDecimal netPay;
 
     @Enumerated(EnumType.STRING)
-    @Column(name = "payroll_status", nullable = false)
-    private PayrollStatus payrollStatus = PayrollStatus.PENDING;
+    @Column(name = "payroll_status")
+    private PayrollStatus payrollStatus;
 
     @Column(name = "processed_date")
     private LocalDate processedDate;
@@ -55,14 +56,14 @@ public class Payroll extends BaseEntity {
     // Constructors
     public Payroll() {}
 
-    public Payroll(String employeeId, LocalDate payPeriodStart, LocalDate payPeriodEnd, BigDecimal salary, BigDecimal bonus, BigDecimal deductions) {
+    public Payroll(String employeeId, LocalDate payPeriodStart, LocalDate payPeriodEnd, BigDecimal salary,
+            BigDecimal bonus, BigDecimal deductions) {
         this.employeeId = employeeId;
         this.payPeriodStart = payPeriodStart;
         this.payPeriodEnd = payPeriodEnd;
         this.salary = salary;
         this.bonus = bonus;
         this.deductions = deductions;
-        this.netPay = salary.add(bonus).subtract(deductions);
     }
 
     public String getId() {
@@ -153,6 +154,7 @@ public class Payroll extends BaseEntity {
         this.paidDate = paidDate;
     }
 
+    @JsonIgnore
     public Employee getEmployee() {
         return employee;
     }
@@ -161,5 +163,14 @@ public class Payroll extends BaseEntity {
         this.employee = employee;
     }
 
-    
+    @PrePersist
+    private void prePersist() {
+        // Default values
+        if (this.payrollStatus == null) {
+            this.payrollStatus = PayrollStatus.PENDING; // Default to PENDING if not set
+        }
+        if (this.netPay == null) {
+            this.netPay = (salary.add(bonus)).subtract(deductions); // Calculate net pay
+        }
+    }
 }

@@ -1,6 +1,8 @@
 package com.hrmanagement.hr_management_api.model.entity;
 
 import java.time.LocalDate;
+
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.hrmanagement.hr_management_api.model.enums.LeaveRequestStatus;
 import com.hrmanagement.hr_management_api.model.enums.LeaveRequestType;
 
@@ -18,7 +20,7 @@ public class LeaveRequest extends BaseEntity {
     private String employeeId;
 
     @Enumerated(EnumType.STRING)
-    @Column(name = "leave_request_type", nullable = false)
+    @Column(name = "leave_request_type")
     private LeaveRequestType leaveRequestType;
 
     @Column(name = "start_date", nullable = false)
@@ -27,20 +29,20 @@ public class LeaveRequest extends BaseEntity {
     @Column(name = "end_date", nullable = false)
     private LocalDate endDate;
 
-    @Column(name = "total_days", nullable = false)
+    @Column(name = "total_days")
     private Integer totalDays;
 
     @Column(name = "reason", length = 255)
     private String reason;
 
     @Enumerated(EnumType.STRING)
-    @Column(name = "leave_request_status", nullable = false)
+    @Column(name = "leave_request_status")
     private LeaveRequestStatus leaveRequestStatus;
 
     @Column(name = "approved_by")
     private String approvedBy;
 
-    @Column(name = "request_date", nullable = false)
+    @Column(name = "request_date")
     private LocalDate requestDate;
 
     @Column(name = "response_date")
@@ -69,7 +71,6 @@ public class LeaveRequest extends BaseEntity {
         this.endDate = endDate;
         this.totalDays = totalDays;
         this.reason = reason;
-        this.leaveRequestStatus = LeaveRequestStatus.PENDING; // Default status
         this.requestDate = requestDate;
     }
 
@@ -169,6 +170,7 @@ public class LeaveRequest extends BaseEntity {
         this.comments = comments;
     }
 
+    @JsonIgnore
     public Employee getEmployee() {
         return employee;
     }
@@ -185,5 +187,21 @@ public class LeaveRequest extends BaseEntity {
         this.approver = approver;
     }
 
+    @PrePersist
+    private void prePersist() {
+        if (this.leaveRequestStatus == null) {
+            this.leaveRequestStatus = LeaveRequestStatus.PENDING; // Default to pending if not set
+        }
+        if (this.requestDate == null) {
+            this.requestDate = LocalDate.now(); // Default to current date if not set
+        }
+
+        // Total Days
+        if (this.startDate != null && this.endDate != null) {
+            this.totalDays = (int) (this.endDate.toEpochDay() - this.startDate.toEpochDay()) + 1; // Inclusive of start and end dates
+        } else {
+            this.totalDays = 0; // Default to 0 if dates are not set
+        }
+    }
     
 }
