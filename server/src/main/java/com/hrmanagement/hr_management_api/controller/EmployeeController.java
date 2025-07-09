@@ -9,6 +9,7 @@ import org.springframework.web.bind.annotation.*;
 
 import com.hrmanagement.hr_management_api.model.entity.Employee;
 import com.hrmanagement.hr_management_api.repository.EmployeeRepository;
+import com.hrmanagement.hr_management_api.util.ApiResponse;
 
 @RestController
 @RequestMapping("/api/employees")
@@ -22,41 +23,46 @@ public class EmployeeController {
 
     // Get all employees
     @GetMapping("/")
-    public ResponseEntity<List<Employee>> getAllEmployees() {
+    public ResponseEntity<ApiResponse> getAllEmployees() {
         List<Employee> employees = employeeRepository.findAll();
-        return ResponseEntity.ok(employees);
+        ApiResponse response = new ApiResponse(true, "Employees retrieved successfully", employees);
+        return ResponseEntity.ok(response);
     }
 
     // Get employee by ID
     @GetMapping("/{id}")
-    public ResponseEntity<Employee> getEmployeeById(@PathVariable String id) {
+    public ResponseEntity<ApiResponse> getEmployeeById(@PathVariable String id) {
         Optional<Employee> employee = employeeRepository.findById(id);
-        return employee.map(ResponseEntity::ok)
-                      .orElse(ResponseEntity.notFound().build());
+        return employee.map(emp -> {
+            ApiResponse response = new ApiResponse(true, "Employee retrieved successfully", emp);
+            return ResponseEntity.ok(response);
+        }).orElseGet(() -> {
+            ApiResponse response = new ApiResponse(false, "Employee not found", null);
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(response);
+        });
     }
 
     // Create new employee
     @PostMapping("/")
-    public ResponseEntity<Employee> createEmployee(@RequestBody Employee employee) {
+    public ResponseEntity<ApiResponse> createEmployee(@RequestBody Employee employee) {
         try {
             Employee savedEmployee = employeeRepository.save(employee);
-            return ResponseEntity.status(HttpStatus.CREATED).body(savedEmployee);
+            ApiResponse response = new ApiResponse(true, "Employee created successfully", savedEmployee);
+            return ResponseEntity.status(HttpStatus.CREATED).body(response);
         } catch (Exception e) {
-            // return ResponseEntity.badRequest().build();
-            // return error
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                                 .body(new Employee()); // Return an empty employee or handle error appropriately
+            ApiResponse response = new ApiResponse(false, "Error creating employee: " + e.getMessage(), null);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
         }
     }
 
     // Update employee
     @PutMapping("/{id}")
-    public ResponseEntity<Employee> updateEmployee(@PathVariable String id, @RequestBody Employee employeeDetails) {
+    public ResponseEntity<ApiResponse> updateEmployee(@PathVariable String id, @RequestBody Employee employeeDetails) {
         Optional<Employee> existingEmployee = employeeRepository.findById(id);
-        
+
         if (existingEmployee.isPresent()) {
             Employee employee = existingEmployee.get();
-            
+
             // Update fields
             employee.setFirstName(employeeDetails.getFirstName());
             employee.setLastName(employeeDetails.getLastName());
@@ -69,22 +75,25 @@ public class EmployeeController {
             employee.setSalary(employeeDetails.getSalary());
             employee.setEmployeeStatus(employeeDetails.getEmployeeStatus());
             employee.setProfileImage(employeeDetails.getProfileImage());
-            
+
             Employee updatedEmployee = employeeRepository.save(employee);
-            return ResponseEntity.ok(updatedEmployee);
+            ApiResponse response = new ApiResponse(true, "Employee updated successfully", updatedEmployee);
+            return ResponseEntity.ok(response);
         } else {
-            return ResponseEntity.notFound().build();
+            ApiResponse response = new ApiResponse(false, "Employee not found", null);
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(response);
         }
     }
 
     // Partial update employee (PATCH)
     @PatchMapping("/{id}")
-    public ResponseEntity<Employee> partialUpdateEmployee(@PathVariable String id, @RequestBody Employee employeeDetails) {
+    public ResponseEntity<ApiResponse> partialUpdateEmployee(@PathVariable String id,
+            @RequestBody Employee employeeDetails) {
         Optional<Employee> existingEmployee = employeeRepository.findById(id);
-        
+
         if (existingEmployee.isPresent()) {
             Employee employee = existingEmployee.get();
-            
+
             // Update only non-null fields
             if (employeeDetails.getFirstName() != null) {
                 employee.setFirstName(employeeDetails.getFirstName());
@@ -119,74 +128,85 @@ public class EmployeeController {
             if (employeeDetails.getProfileImage() != null) {
                 employee.setProfileImage(employeeDetails.getProfileImage());
             }
-            
+
             Employee updatedEmployee = employeeRepository.save(employee);
-            return ResponseEntity.ok(updatedEmployee);
+            ApiResponse response = new ApiResponse(true, "Employee updated successfully", updatedEmployee);
+            return ResponseEntity.ok(response);
         } else {
-            return ResponseEntity.notFound().build();
+            ApiResponse response = new ApiResponse(false, "Employee not found", null);
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(response);
         }
     }
 
     // Delete employee (soft delete)
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> deleteEmployee(@PathVariable String id) {
+    public ResponseEntity<ApiResponse> deleteEmployee(@PathVariable String id) {
         Optional<Employee> existingEmployee = employeeRepository.findById(id);
-        
+
         if (existingEmployee.isPresent()) {
             Employee employee = existingEmployee.get();
             employee.setDeleted(true); // Soft delete
             employeeRepository.save(employee);
-            return ResponseEntity.noContent().build();
+            ApiResponse response = new ApiResponse(true, "Employee deleted successfully", null);
+            return ResponseEntity.ok(response);
         } else {
-            return ResponseEntity.notFound().build();
+            ApiResponse response = new ApiResponse(false, "Employee not found", null);
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(response);
         }
     }
 
     // Hard delete employee (permanently remove from database)
     @DeleteMapping("/{id}/hard")
-    public ResponseEntity<Void> hardDeleteEmployee(@PathVariable String id) {
+    public ResponseEntity<ApiResponse> hardDeleteEmployee(@PathVariable String id) {
         if (employeeRepository.existsById(id)) {
             employeeRepository.deleteById(id);
-            return ResponseEntity.noContent().build();
+            ApiResponse response = new ApiResponse(true, "Employee deleted permanently", null);
+            return ResponseEntity.ok(response);
         } else {
-            return ResponseEntity.notFound().build();
+            ApiResponse response = new ApiResponse(false, "Employee not found", null);
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(response);
         }
     }
 
     // Get employees by department
     @GetMapping("/department/{departmentId}")
-    public ResponseEntity<List<Employee>> getEmployeesByDepartment(@PathVariable String departmentId) {
+    public ResponseEntity<ApiResponse> getEmployeesByDepartment(@PathVariable String departmentId) {
         List<Employee> employees = employeeRepository.findByDepartmentId(departmentId);
-        return ResponseEntity.ok(employees);
+        ApiResponse response = new ApiResponse(true, "Employees retrieved successfully", employees);
+        return ResponseEntity.ok(response);
     }
 
     // Get employees by position
     @GetMapping("/position/{positionId}")
-    public ResponseEntity<List<Employee>> getEmployeesByPosition(@PathVariable String positionId) {
+    public ResponseEntity<ApiResponse> getEmployeesByPosition(@PathVariable String positionId) {
         List<Employee> employees = employeeRepository.findByPositionId(positionId);
-        return ResponseEntity.ok(employees);
+        ApiResponse response = new ApiResponse(true, "Employees retrieved successfully", employees);
+        return ResponseEntity.ok(response);
     }
 
     // Get active employees only
     @GetMapping("/active")
-    public ResponseEntity<List<Employee>> getActiveEmployees() {
+    public ResponseEntity<ApiResponse> getActiveEmployees() {
         List<Employee> employees = employeeRepository.findByEmployeeStatus(
-            com.hrmanagement.hr_management_api.model.enums.EmployeeStatus.ACTIVE
-        );
-        return ResponseEntity.ok(employees);
+                com.hrmanagement.hr_management_api.model.enums.EmployeeStatus.ACTIVE);
+        ApiResponse response = new ApiResponse(true, "Active employees retrieved successfully", employees);
+        return ResponseEntity.ok(response);
     }
 
     // Search employees by name
     @GetMapping("/search")
-    public ResponseEntity<List<Employee>> searchEmployees(@RequestParam String query) {
-        List<Employee> employees = employeeRepository.findByFirstNameContainingIgnoreCaseOrLastNameContainingIgnoreCase(query, query);
-        return ResponseEntity.ok(employees);
+    public ResponseEntity<ApiResponse> searchEmployees(@RequestParam String query) {
+        List<Employee> employees = employeeRepository
+                .findByFirstNameContainingIgnoreCaseOrLastNameContainingIgnoreCase(query, query);
+        ApiResponse response = new ApiResponse(true, "Employees retrieved successfully", employees);
+        return ResponseEntity.ok(response);
     }
 
     // Get employee count
     @GetMapping("/count")
-    public ResponseEntity<Long> getEmployeeCount() {
+    public ResponseEntity<ApiResponse> getEmployeeCount() {
         long count = employeeRepository.count();
-        return ResponseEntity.ok(count);
+        ApiResponse response = new ApiResponse(true, "Employee count retrieved successfully", count);
+        return ResponseEntity.ok(response);
     }
 }

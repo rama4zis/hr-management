@@ -3,6 +3,8 @@ package com.hrmanagement.hr_management_api.model.entity;
 import java.util.ArrayList;
 import java.util.List;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+
 import jakarta.persistence.*;
 
 @Entity
@@ -73,6 +75,7 @@ public class Department extends BaseEntity {
         this.managerId = managerId;
     }
 
+    @JsonIgnore
     public List<Employee> getEmployees() {
         return employees;
     }
@@ -81,6 +84,7 @@ public class Department extends BaseEntity {
         this.employees = employees;
     }
 
+    @JsonIgnore
     public List<Position> getPositions() {
         return positions;
     }
@@ -89,6 +93,7 @@ public class Department extends BaseEntity {
         this.positions = positions;
     }
 
+    @JsonIgnore
     public Employee getManager() {
         return manager;
     }
