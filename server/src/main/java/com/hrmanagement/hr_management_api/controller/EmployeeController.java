@@ -21,18 +21,26 @@ public class EmployeeController {
         this.employeeRepository = employeeRepository;
     }
 
-    // Get all employees
+    // Get all employees (non-deleted)
     @GetMapping("/")
     public ResponseEntity<ApiResponse> getAllEmployees() {
-        List<Employee> employees = employeeRepository.findAll();
+        List<Employee> employees = employeeRepository.findByIsDeletedFalse();
         ApiResponse response = new ApiResponse(true, "Employees retrieved successfully", employees);
+        return ResponseEntity.ok(response);
+    }
+
+    // Get all employees including deleted
+    @GetMapping("/all")
+    public ResponseEntity<ApiResponse> getAllEmployeesIncludingDeleted() {
+        List<Employee> employees = employeeRepository.findAll();
+        ApiResponse response = new ApiResponse(true, "All employees retrieved successfully", employees);
         return ResponseEntity.ok(response);
     }
 
     // Get employee by ID
     @GetMapping("/{id}")
     public ResponseEntity<ApiResponse> getEmployeeById(@PathVariable String id) {
-        Optional<Employee> employee = employeeRepository.findById(id);
+        Optional<Employee> employee = employeeRepository.findByIdAndIsDeletedFalse(id);
         return employee.map(emp -> {
             ApiResponse response = new ApiResponse(true, "Employee retrieved successfully", emp);
             return ResponseEntity.ok(response);
@@ -58,7 +66,7 @@ public class EmployeeController {
     // Update employee
     @PutMapping("/{id}")
     public ResponseEntity<ApiResponse> updateEmployee(@PathVariable String id, @RequestBody Employee employeeDetails) {
-        Optional<Employee> existingEmployee = employeeRepository.findById(id);
+        Optional<Employee> existingEmployee = employeeRepository.findByIdAndIsDeletedFalse(id);
 
         if (existingEmployee.isPresent()) {
             Employee employee = existingEmployee.get();
@@ -89,7 +97,7 @@ public class EmployeeController {
     @PatchMapping("/{id}")
     public ResponseEntity<ApiResponse> partialUpdateEmployee(@PathVariable String id,
             @RequestBody Employee employeeDetails) {
-        Optional<Employee> existingEmployee = employeeRepository.findById(id);
+        Optional<Employee> existingEmployee = employeeRepository.findByIdAndIsDeletedFalse(id);
 
         if (existingEmployee.isPresent()) {
             Employee employee = existingEmployee.get();
@@ -141,7 +149,7 @@ public class EmployeeController {
     // Delete employee (soft delete)
     @DeleteMapping("/{id}")
     public ResponseEntity<ApiResponse> deleteEmployee(@PathVariable String id) {
-        Optional<Employee> existingEmployee = employeeRepository.findById(id);
+        Optional<Employee> existingEmployee = employeeRepository.findByIdAndIsDeletedFalse(id);
 
         if (existingEmployee.isPresent()) {
             Employee employee = existingEmployee.get();
@@ -156,8 +164,8 @@ public class EmployeeController {
     }
 
     // Hard delete employee (permanently remove from database)
-    @DeleteMapping("/{id}/hard")
-    public ResponseEntity<ApiResponse> hardDeleteEmployee(@PathVariable String id) {
+    @DeleteMapping("/{id}/permanent")
+    public ResponseEntity<ApiResponse> permanentDeleteEmployee(@PathVariable String id) {
         if (employeeRepository.existsById(id)) {
             employeeRepository.deleteById(id);
             ApiResponse response = new ApiResponse(true, "Employee deleted permanently", null);
@@ -168,10 +176,33 @@ public class EmployeeController {
         }
     }
 
+    // Restore soft deleted employee
+    @PutMapping("/{id}/restore")
+    public ResponseEntity<ApiResponse> restoreEmployee(@PathVariable String id) {
+        return employeeRepository.findById(id).map(employee -> {
+            if (!employee.isDeleted()) {
+                ApiResponse response = new ApiResponse(false, "Employee is not deleted", null);
+                return ResponseEntity.badRequest().body(response);
+            }
+            try {
+                employee.setDeleted(false);
+                Employee restoredEmployee = employeeRepository.save(employee);
+                ApiResponse response = new ApiResponse(true, "Employee restored successfully", restoredEmployee);
+                return ResponseEntity.ok(response);
+            } catch (Exception e) {
+                ApiResponse response = new ApiResponse(false, "Error restoring employee: " + e.getMessage(), null);
+                return ResponseEntity.badRequest().body(response);
+            }
+        }).orElseGet(() -> {
+            ApiResponse response = new ApiResponse(false, "Employee not found", null);
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(response);
+        });
+    }
+
     // Get employees by department
     @GetMapping("/department/{departmentId}")
     public ResponseEntity<ApiResponse> getEmployeesByDepartment(@PathVariable String departmentId) {
-        List<Employee> employees = employeeRepository.findByDepartmentId(departmentId);
+        List<Employee> employees = employeeRepository.findByDepartmentIdAndIsDeletedFalse(departmentId);
         ApiResponse response = new ApiResponse(true, "Employees retrieved successfully", employees);
         return ResponseEntity.ok(response);
     }
@@ -179,7 +210,7 @@ public class EmployeeController {
     // Get employees by position
     @GetMapping("/position/{positionId}")
     public ResponseEntity<ApiResponse> getEmployeesByPosition(@PathVariable String positionId) {
-        List<Employee> employees = employeeRepository.findByPositionId(positionId);
+        List<Employee> employees = employeeRepository.findByPositionIdAndIsDeletedFalse(positionId);
         ApiResponse response = new ApiResponse(true, "Employees retrieved successfully", employees);
         return ResponseEntity.ok(response);
     }
@@ -187,8 +218,7 @@ public class EmployeeController {
     // Get active employees only
     @GetMapping("/active")
     public ResponseEntity<ApiResponse> getActiveEmployees() {
-        List<Employee> employees = employeeRepository.findByEmployeeStatus(
-                com.hrmanagement.hr_management_api.model.enums.EmployeeStatus.ACTIVE);
+        List<Employee> employees = employeeRepository.findActiveEmployees();
         ApiResponse response = new ApiResponse(true, "Active employees retrieved successfully", employees);
         return ResponseEntity.ok(response);
     }
@@ -196,17 +226,48 @@ public class EmployeeController {
     // Search employees by name
     @GetMapping("/search")
     public ResponseEntity<ApiResponse> searchEmployees(@RequestParam String query) {
-        List<Employee> employees = employeeRepository
-                .findByFirstNameContainingIgnoreCaseOrLastNameContainingIgnoreCase(query, query);
+        List<Employee> employees = employeeRepository.searchByNameAndIsDeleted(query);
         ApiResponse response = new ApiResponse(true, "Employees retrieved successfully", employees);
         return ResponseEntity.ok(response);
     }
 
-    // Get employee count
+    // Get employee count (non-deleted only)
     @GetMapping("/count")
     public ResponseEntity<ApiResponse> getEmployeeCount() {
-        long count = employeeRepository.count();
+        long count = employeeRepository.countByIsDeletedFalse();
         ApiResponse response = new ApiResponse(true, "Employee count retrieved successfully", count);
         return ResponseEntity.ok(response);
+    }
+
+    // Get deleted employees
+    @GetMapping("/deleted")
+    public ResponseEntity<ApiResponse> getDeletedEmployees() {
+        try {
+            List<Employee> deletedEmployees = employeeRepository.findAll().stream()
+                .filter(Employee::isDeleted)
+                .toList();
+            ApiResponse response = new ApiResponse(true, "Deleted employees retrieved successfully", deletedEmployees);
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            ApiResponse response = new ApiResponse(false, "Error retrieving deleted employees: " + e.getMessage(), null);
+            return ResponseEntity.badRequest().body(response);
+        }
+    }
+
+    // Bulk delete employees
+    @DeleteMapping("/bulk")
+    public ResponseEntity<ApiResponse> bulkDeleteEmployees(@RequestBody List<String> employeeIds) {
+        try {
+            List<Employee> employees = employeeRepository.findAllById(employeeIds);
+            employees.forEach(employee -> employee.setDeleted(true));
+            employeeRepository.saveAll(employees);
+            
+            ApiResponse response = new ApiResponse(true, 
+                "Bulk delete completed. " + employees.size() + " employees deleted.", employees.size());
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            ApiResponse response = new ApiResponse(false, "Error in bulk delete: " + e.getMessage(), null);
+            return ResponseEntity.badRequest().body(response);
+        }
     }
 }

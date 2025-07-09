@@ -21,32 +21,46 @@ public class DepartmentController {
         this.departmentRepository = departmentRepository;
     }
 
-    // Get all departments
+    // Get all departments (non-deleted)
     @GetMapping("/")
     public ResponseEntity<ApiResponse> getAllDepartments() {
-        List<Department> departments = departmentRepository.findAll();
+        List<Department> departments = departmentRepository.findByIsDeletedFalse();
         ApiResponse response = new ApiResponse(true, "Departments retrieved successfully", departments);
+        return ResponseEntity.ok(response);
+    }
+
+    // Get all departments including deleted
+    @GetMapping("/all")
+    public ResponseEntity<ApiResponse> getAllDepartmentsIncludingDeleted() {
+        List<Department> departments = departmentRepository.findAll();
+        ApiResponse response = new ApiResponse(true, "All departments retrieved successfully", departments);
         return ResponseEntity.ok(response);
     }
 
     // Get department by ID
     @GetMapping("/{id}")
     public ResponseEntity<ApiResponse> getDepartmentById(@PathVariable String id) {
-        Optional<Department> department = departmentRepository.findById(id);
-        ApiResponse response = department.map(dep -> new ApiResponse(true, "Department retrieved successfully", dep))
-                .orElse(new ApiResponse(false, "Department not found", null));
-        return ResponseEntity.ok(response);
+        Optional<Department> department = departmentRepository.findByIdAndIsDeletedFalse(id);
+        return department.map(dep -> {
+            ApiResponse response = new ApiResponse(true, "Department retrieved successfully", dep);
+            return ResponseEntity.ok(response);
+        }).orElseGet(() -> {
+            ApiResponse response = new ApiResponse(false, "Department not found", null);
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(response);
+        });
     }
 
     // Create new department
     @PostMapping("/")
     public ResponseEntity<ApiResponse> createDepartment(@RequestBody Department department) {
         try {
+            // Ensure the department is not marked as deleted when creating
+            department.setDeleted(false);
             Department savedDepartment = departmentRepository.save(department);
             ApiResponse response = new ApiResponse(true, "Department created successfully", savedDepartment);
             return ResponseEntity.status(HttpStatus.CREATED).body(response);
         } catch (Exception e) {
-            ApiResponse response = new ApiResponse(false, "Error creating department", null);
+            ApiResponse response = new ApiResponse(false, "Error creating department: " + e.getMessage(), null);
             return ResponseEntity.badRequest().body(response);
         }
     }
@@ -55,7 +69,7 @@ public class DepartmentController {
     @PutMapping("/{id}")
     public ResponseEntity<ApiResponse> updateDepartment(@PathVariable String id,
             @RequestBody Department departmentDetails) {
-        Optional<Department> existingDepartment = departmentRepository.findById(id);
+        Optional<Department> existingDepartment = departmentRepository.findByIdAndIsDeletedFalse(id);
 
         if (existingDepartment.isPresent()) {
             Department department = existingDepartment.get();
@@ -70,7 +84,7 @@ public class DepartmentController {
             return ResponseEntity.ok(response);
         } else {
             ApiResponse response = new ApiResponse(false, "Department not found", null);
-            return ResponseEntity.ok(response);
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(response);
         }
     }
 
@@ -78,7 +92,7 @@ public class DepartmentController {
     @PatchMapping("/{id}")
     public ResponseEntity<ApiResponse> partialUpdateDepartment(@PathVariable String id,
             @RequestBody Department departmentDetails) {
-        Optional<Department> existingDepartment = departmentRepository.findById(id);
+        Optional<Department> existingDepartment = departmentRepository.findByIdAndIsDeletedFalse(id);
 
         if (existingDepartment.isPresent()) {
             Department department = existingDepartment.get();
@@ -99,14 +113,14 @@ public class DepartmentController {
             return ResponseEntity.ok(response);
         } else {
             ApiResponse response = new ApiResponse(false, "Department not found", null);
-            return ResponseEntity.ok(response);
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(response);
         }
     }
 
     // Delete department (soft delete)
     @DeleteMapping("/{id}")
     public ResponseEntity<ApiResponse> deleteDepartment(@PathVariable String id) {
-        Optional<Department> existingDepartment = departmentRepository.findById(id);
+        Optional<Department> existingDepartment = departmentRepository.findByIdAndIsDeletedFalse(id);
 
         if (existingDepartment.isPresent()) {
             Department department = existingDepartment.get();
@@ -136,15 +150,15 @@ public class DepartmentController {
     // Search departments by name
     @GetMapping("/search")
     public ResponseEntity<ApiResponse> searchDepartments(@RequestParam String query) {
-        List<Department> departments = departmentRepository.findByNameContainingIgnoreCase(query);
+        List<Department> departments = departmentRepository.searchDepartments(query);
         ApiResponse response = new ApiResponse(true, "Departments retrieved successfully", departments);
         return ResponseEntity.ok(response);
     }
 
-    // Get department count
+    // Get department count (non-deleted only)
     @GetMapping("/count")
     public ResponseEntity<ApiResponse> getDepartmentCount() {
-        long count = departmentRepository.count();
+        long count = departmentRepository.countByIsDeletedFalse();
         ApiResponse response = new ApiResponse(true, "Department count retrieved successfully", count);
         return ResponseEntity.ok(response);
     }
@@ -152,7 +166,7 @@ public class DepartmentController {
     // Assign manager to department
     @PutMapping("/{id}/manager/{managerId}")
     public ResponseEntity<ApiResponse> assignManager(@PathVariable String id, @PathVariable String managerId) {
-        Optional<Department> existingDepartment = departmentRepository.findById(id);
+        Optional<Department> existingDepartment = departmentRepository.findByIdAndIsDeletedFalse(id);
 
         if (existingDepartment.isPresent()) {
             Department department = existingDepartment.get();
@@ -169,7 +183,7 @@ public class DepartmentController {
     // Remove manager from department
     @DeleteMapping("/{id}/manager")
     public ResponseEntity<ApiResponse> removeManager(@PathVariable String id) {
-        Optional<Department> existingDepartment = departmentRepository.findById(id);
+        Optional<Department> existingDepartment = departmentRepository.findByIdAndIsDeletedFalse(id);
 
         if (existingDepartment.isPresent()) {
             Department department = existingDepartment.get();

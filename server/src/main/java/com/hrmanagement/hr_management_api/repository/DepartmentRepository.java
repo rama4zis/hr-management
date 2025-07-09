@@ -11,40 +11,56 @@ import com.hrmanagement.hr_management_api.model.entity.Department;
 
 public interface DepartmentRepository extends JpaRepository<Department, String> {
 
-    // Find departments by name (case insensitive)
-    List<Department> findByNameContainingIgnoreCase(String name);
+    // Find all non-deleted departments
+    List<Department> findByIsDeletedFalse();
+    
+    // Find by ID and not deleted
+    Optional<Department> findByIdAndIsDeletedFalse(String id);
 
-    // Find departments with managers
+    // Find departments by name (case insensitive, non-deleted)
+    List<Department> findByNameContainingIgnoreCaseAndIsDeletedFalse(String name);
+
+    // Find departments with managers (non-deleted)
     @Query("SELECT d FROM Department d WHERE d.managerId IS NOT NULL AND d.isDeleted = false")
     List<Department> findDepartmentsWithManagers();
 
-    // Find departments without managers
+    // Find departments without managers (non-deleted)
     @Query("SELECT d FROM Department d WHERE d.managerId IS NULL AND d.isDeleted = false")
     List<Department> findDepartmentsWithoutManagers();
 
-    // Find department with employees (using JOIN FETCH)
-    @Query("SELECT d FROM Department d LEFT JOIN FETCH d.employees WHERE d.id = :id AND d.isDeleted = false")
+    // Find department with employees (using JOIN FETCH, non-deleted)
+    @Query("SELECT d FROM Department d LEFT JOIN FETCH d.employees e WHERE d.id = :id AND d.isDeleted = false AND e.isDeleted = false")
     Optional<Department> findByIdWithEmployees(@Param("id") String id);
 
-    // Find department with positions (using JOIN FETCH)
-    @Query("SELECT d FROM Department d LEFT JOIN FETCH d.positions WHERE d.id = :id AND d.isDeleted = false")
+    // Find department with positions (using JOIN FETCH, non-deleted)
+    @Query("SELECT d FROM Department d LEFT JOIN FETCH d.positions p WHERE d.id = :id AND d.isDeleted = false AND p.isDeleted = false")
     Optional<Department> findByIdWithPositions(@Param("id") String id);
 
-    // Find department by name
-    Optional<Department> findByName(String name);
+    // Find department by name (non-deleted)
+    Optional<Department> findByNameAndIsDeletedFalse(String name);
 
-    // Check if department exists by name
-    boolean existsByName(String name);
+    // Check if department exists by name (non-deleted)
+    Boolean existsByNameAndIsDeletedFalse(String name);
 
-    // Count departments with managers
+    // Count departments with managers (non-deleted)
     @Query("SELECT COUNT(d) FROM Department d WHERE d.managerId IS NOT NULL AND d.isDeleted = false")
-    long countDepartmentsWithManagers();
+    Long countDepartmentsWithManagers();
 
-    // Count departments without managers
+    // Count departments without managers (non-deleted)
     @Query("SELECT COUNT(d) FROM Department d WHERE d.managerId IS NULL AND d.isDeleted = false")
-    long countDepartmentsWithoutManagers();
+    Long countDepartmentsWithoutManagers();
 
-    // Find departments by manager ID
+    // Count non-deleted departments
+    @Query("SELECT COUNT(d) FROM Department d WHERE d.isDeleted = false")
+    Long countByIsDeletedFalse();
+
+    // Find departments by manager ID (non-deleted)
     @Query("SELECT d FROM Department d WHERE d.managerId = :managerId AND d.isDeleted = false")
-    List<Department> findByManagerId(@Param("managerId") String managerId);
+    List<Department> findByManagerIdAndIsDeletedFalse(@Param("managerId") String managerId);
+
+    // Search departments by name or description
+    @Query("SELECT d FROM Department d WHERE d.isDeleted = false AND " +
+           "(LOWER(d.name) LIKE LOWER(CONCAT('%', :searchTerm, '%')) OR " +
+           "LOWER(d.description) LIKE LOWER(CONCAT('%', :searchTerm, '%')))")
+    List<Department> searchDepartments(@Param("searchTerm") String searchTerm);
 }
