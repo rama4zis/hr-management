@@ -201,32 +201,6 @@ public class PositionController {
         }
     }
 
-    // Get positions by department
-    @GetMapping("/department/{departmentId}")
-    public ResponseEntity<ApiResponse> getPositionsByDepartment(@PathVariable String departmentId) {
-        try {
-            List<Position> positions = positionRepository.findByDepartmentIdAndIsDeletedFalse(departmentId);
-            ApiResponse response = new ApiResponse(true, "Positions retrieved for department successfully", positions);
-            return ResponseEntity.ok(response);
-        } catch (Exception e) {
-            ApiResponse response = new ApiResponse(false, "Error retrieving positions for department: " + e.getMessage(), null);
-            return ResponseEntity.badRequest().body(response);
-        }
-    }
-
-    // Get position count by department
-    @GetMapping("/department/{departmentId}/count")
-    public ResponseEntity<ApiResponse> getPositionCountByDepartment(@PathVariable String departmentId) {
-        try {
-            Long count = positionRepository.countByDepartmentId(departmentId);
-            ApiResponse response = new ApiResponse(true, "Position count retrieved successfully", count);
-            return ResponseEntity.ok(response);
-        } catch (Exception e) {
-            ApiResponse response = new ApiResponse(false, "Error counting positions: " + e.getMessage(), null);
-            return ResponseEntity.badRequest().body(response);
-        }
-    }
-
     // Get positions with employee count
     @GetMapping("/with-employee-count")
     public ResponseEntity<ApiResponse> getPositionsWithEmployeeCount() {

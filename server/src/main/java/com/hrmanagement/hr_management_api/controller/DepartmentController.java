@@ -50,6 +50,19 @@ public class DepartmentController {
         });
     }
 
+    // Get all Positions in a department by id
+    @GetMapping("/{id}/positions")
+    public ResponseEntity<ApiResponse> getPositionsInDepartment(@PathVariable String id) {
+        Optional<Department> department = departmentRepository.findByIdWithPositions(id);
+        return department.map(dep -> {
+            ApiResponse response = new ApiResponse(true, "Positions in department retrieved successfully", dep.getPositions());
+            return ResponseEntity.ok(response);
+        }).orElseGet(() -> {
+            ApiResponse response = new ApiResponse(false, "Department not found", null);
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(response);
+        });
+    }
+
     // Create new department
     @PostMapping("/")
     public ResponseEntity<ApiResponse> createDepartment(@RequestBody Department department) {
