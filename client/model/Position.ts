@@ -4,10 +4,5 @@ export interface Position {
   description: string;
   departmentId: string;
   createdAt: Date;
-}
-
-export interface CreatePositionData {
-  title: string;
-  description: string;
-  departmentId: string;
+  updatedAt?: Date;
 }
