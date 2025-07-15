@@ -208,6 +208,7 @@ public class Employee extends BaseEntity {
         this.department = department;
     }
 
+    @JsonIgnore
     public Position getPosition() {
         return position;
     }

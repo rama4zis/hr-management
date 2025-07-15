@@ -7,62 +7,107 @@ import {
   Avatar,
   Paper,
   Grid,
+  Button,
+  Alert,
+  CircularProgress,
 } from "@mui/material";
+import { Add as AddIcon } from "@mui/icons-material";
 import { DatePicker } from "@mui/x-date-pickers/DatePicker";
 import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 import dayjs from "dayjs";
-import { dummyAttendance, getEmployeeName, getEmployeeProfileImage } from "../../../../data";
-import DataTable,
-  { TableColumn, StatusChip, formatDate }
-from "@/components/DataTable";
-import { Attendance } from "@/model/Attendance";
+import DataTable, { TableColumn, StatusChip, formatDate } from "@/components/DataTable";
+import { Attendance, Employee, AttendanceStatus, CreateAttendanceRequest } from "../../../../types";
+import { AttendanceService } from "@/services/attendanceService";
+import { EmployeeService } from "@/services/employeeService";
+import { useAsync, useAsyncCallback } from "@/hooks/useAsync";
+import AttendanceForm from "./AttendanceForm";
 
 export default function AttendancePage() {
   const [selectedDate, setSelectedDate] = useState(dayjs()); // Current month
+  const [formOpen, setFormOpen] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  // Fetch attendance data from API
+  const { 
+    data: attendanceData = [], 
+    loading: attendanceLoading, 
+    error: attendanceError, 
+    refetch: refetchAttendance 
+  } = useAsync(() => {
+    const startDate = selectedDate.startOf('month').format('YYYY-MM-DD');
+    const endDate = selectedDate.endOf('month').format('YYYY-MM-DD');
+    return AttendanceService.getAttendanceByDateRange(startDate, endDate);
+  }, [selectedDate]);
+
+  // Fetch employees data
+  const { data: employees = [] } = useAsync(() => EmployeeService.getAllEmployees(), []);
+
+  // Async operations
+  const { execute: createAttendance, loading: createLoading } = useAsyncCallback(AttendanceService.createAttendance);
+
+  // Helper functions
+  const getEmployeeName = (employeeId: string) => {
+    const employee = employees?.find(emp => emp.id === employeeId);
+    return employee ? employee.fullName : 'Unknown Employee';
+  };
+
+  const getEmployeeProfileImage = (employeeId: string) => {
+    const employee = employees?.find(emp => emp.id === employeeId);
+    return employee?.profileImage || '';
+  };
 
   // Filter attendance data by selected month and year and add employee names
   const filteredAttendance = useMemo(() => {
-    return dummyAttendance
-      .filter((attendance) => {
-        const attendanceDate = dayjs(attendance.date);
-        return (
-          attendanceDate.month() === selectedDate.month() &&
-          attendanceDate.year() === selectedDate.year()
-        );
-      })
-      .map((attendance) => ({
-        ...attendance,
-        employeeName: getEmployeeName(attendance.employeeId) || "Unknown Employee",
-        employeeProfileImage: getEmployeeProfileImage(attendance.employeeId) || "",
-      }));
-  }, [selectedDate]);
+    return attendanceData?.map((attendance) => ({
+      ...attendance,
+      employeeName: getEmployeeName(attendance.employeeId),
+      employeeProfileImage: getEmployeeProfileImage(attendance.employeeId),
+    }));
+  }, [attendanceData, employees]);
 
   // Calculate summary statistics
   const summaryStats = useMemo(() => {
-    const total = filteredAttendance.length;
-    const present = filteredAttendance.filter(
-      (att) => att.status === "present"
+    const total = filteredAttendance?.length;
+    const present = filteredAttendance?.filter(
+      (att) => att.attendanceStatus === AttendanceStatus.PRESENT
     ).length;
-    const late = filteredAttendance.filter(
-      (att) => att.status === "late"
+    const late = filteredAttendance?.filter(
+      (att) => att.attendanceStatus === AttendanceStatus.LATE
     ).length;
-    const absent = filteredAttendance.filter(
-      (att) => att.status === "absent"
+    const absent = filteredAttendance?.filter(
+      (att) => att.attendanceStatus === AttendanceStatus.ABSENT
     ).length;
-    const halfDay = filteredAttendance.filter(
-      (att) => att.status === "half-day"
+    const halfDay = filteredAttendance?.filter(
+      (att) => att.attendanceStatus === AttendanceStatus.HALF_DAY
     ).length;
-    const totalHours = filteredAttendance.reduce(
-      (sum, att) => sum + att.totalHours,
+    const totalHours = filteredAttendance?.reduce(
+      (sum, att) => sum + (att.hoursWorked || 0),
       0
     );
 
     return { total, present, late, absent, halfDay, totalHours };
   }, [filteredAttendance]);
 
+  // Event handlers
+  const handleAddAttendance = () => {
+    setFormOpen(true);
+  };
+
+  const handleFormSubmit = async (data: CreateAttendanceRequest) => {
+    setError(null);
+    const result = await createAttendance(data);
+    if (result !== null) {
+      await refetchAttendance();
+      setFormOpen(false);
+    } else {
+      setError('Failed to create attendance record');
+    }
+  };
+
   // Format time function
-  const formatTime = (date: Date) => {
+  const formatTime = (dateString: string) => {
+    const date = new Date(dateString);
     return new Intl.DateTimeFormat("en-US", {
       hour: "2-digit",
       minute: "2-digit",
@@ -93,7 +138,7 @@ export default function AttendancePage() {
                 {employeeName}
               </Typography>
               <Typography variant="caption" color="text.secondary">
-                ID: {row.employeeId}
+                ID: {row.employeeId.substring(0, 8)}...
               </Typography>
             </Box>
           </Box>
@@ -109,42 +154,45 @@ export default function AttendancePage() {
       id: "clockIn",
       label: "Clock In",
       format: (value, row) => {
-        if (row.status === "absent") return "-";
-        return formatTime(value);
+        if (row.clockIn === null) return "-";
+        return value ? formatTime(value) : "-";
       },
     },
     {
       id: "clockOut",
       label: "Clock Out",
       format: (value, row) => {
-        if (row.status === "absent" || !value) return "-";
+        if (row.clockOut === null || !value) return "-";
         return formatTime(value);
       },
     },
     {
-      id: "totalHours",
+      id: "hoursWorked",
       label: "Total Hours",
       align: "center",
       format: (value, row) => {
-        if (row.status === "absent") return "-";
+        if (row.clockOut === null) return "-";
         return (
           <Typography variant="body2" fontWeight="medium">
-            {value}h
+            {/* get from calculated from clockIn - clockOut */}
+            {row.clockIn && row.clockOut
+              ? `${dayjs(row.clockOut).diff(dayjs(row.clockIn), 'hour', true).toFixed(2)} hrs`
+              : "-"}
           </Typography>
         );
       },
     },
     {
-      id: "status",
+      id: "attendanceStatus",
       label: "Status",
       format: (value) => (
         <StatusChip
           status={value}
           colorMap={{
-            present: "success",
-            late: "warning",
-            absent: "error",
-            "half-day": "info",
+            "PRESENT": "success",
+            "LATE": "warning",
+            "ABSENT": "error",
+            "HALF_DAY": "info",
           }}
         />
       ),
@@ -163,6 +211,18 @@ export default function AttendancePage() {
   return (
     <LocalizationProvider dateAdapter={AdapterDayjs}>
       <Box>
+        {error && (
+          <Alert severity="error" sx={{ mb: 2 }} onClose={() => setError(null)}>
+            {error}
+          </Alert>
+        )}
+
+        {attendanceError && (
+          <Alert severity="error" sx={{ mb: 2 }}>
+            Failed to load attendance data: {attendanceError}
+          </Alert>
+        )}
+
         {/* Page Header with Date Filter */}
         <Box
           sx={{
@@ -181,20 +241,32 @@ export default function AttendancePage() {
             </Typography>
           </Box>
 
-          {/* Month/Year Picker */}
-          <Box sx={{ minWidth: 200 }}>
-            <DatePicker
-              label="Select Month/Year"
-              value={selectedDate}
-              onChange={(newValue) => newValue && setSelectedDate(newValue)}
-              views={["year", "month"]}
-              slotProps={{
-                textField: {
-                  size: "small",
-                  fullWidth: true,
-                },
-              }}
-            />
+          <Box sx={{ display: "flex", gap: 2, alignItems: "center" }}>
+            {/* Month/Year Picker */}
+            <Box sx={{ minWidth: 200 }}>
+              <DatePicker
+                label="Select Month/Year"
+                value={selectedDate}
+                onChange={(newValue) => newValue && setSelectedDate(newValue)}
+                views={["year", "month"]}
+                slotProps={{
+                  textField: {
+                    size: "small",
+                    fullWidth: true,
+                  },
+                }}
+              />
+            </Box>
+
+            {/* Add Manual Attendance Button */}
+            <Button
+              variant="contained"
+              startIcon={<AddIcon />}
+              onClick={handleAddAttendance}
+              disabled={attendanceLoading}
+            >
+              Add Manual Attendance
+            </Button>
           </Box>
         </Box>
 
@@ -240,30 +312,37 @@ export default function AttendancePage() {
               </Typography>
             </Paper>
           </Grid>
-          <Grid size={{xs: 12, sm: 6, md: 3}}>
-            <Paper sx={{ p: 2, textAlign: "center" }}>
-              <Typography variant="h6" color="info.main">
-                {summaryStats.totalHours}h
-              </Typography>
-              <Typography variant="body2" color="text.secondary">
-                Total Hours
-              </Typography>
-            </Paper>
-          </Grid>
+          
         </Grid>
 
         {/* Attendance Table */}
-        <DataTable
-          columns={columns}
-          data={filteredAttendance}
-          searchPlaceholder="Search attendance records by employee name..."
-          searchFields={["employeeName"]} // Now this field exists in the data
-          getRowId={(row) => row.id}
-          emptyMessage={`No attendance records found for ${selectedDate.format(
-            "MMMM YYYY"
-          )}`}
-          defaultRowsPerPage={15}
-          rowsPerPageOptions={[10, 15, 25, 50]}
+        {attendanceLoading ? (
+          <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: 400 }}>
+            <CircularProgress />
+          </Box>
+        ) : (
+          <DataTable
+            title="Attendance Records"
+            subtitle={`Records for ${selectedDate.format("MMMM YYYY")}`}
+            columns={columns}
+            data={filteredAttendance}
+            searchPlaceholder="Search attendance records by employee name..."
+            searchFields={["employeeName"]}
+            getRowId={(row) => row.id}
+            emptyMessage={`No attendance records found for ${selectedDate.format(
+              "MMMM YYYY"
+            )}`}
+            defaultRowsPerPage={15}
+            rowsPerPageOptions={[10, 15, 25, 50]}
+          />
+        )}
+
+        {/* Attendance Form Dialog */}
+        <AttendanceForm
+          open={formOpen}
+          onClose={() => setFormOpen(false)}
+          onSubmit={handleFormSubmit}
+          loading={createLoading}
         />
 
         {/* Additional Info */}
