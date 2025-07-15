@@ -1,84 +1,290 @@
 'use client';
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import {
   Box,
   Typography,
   Avatar,
   Paper,
-  Grid,
   Chip,
   IconButton,
   Tooltip,
+  Button,
+  CircularProgress,
+  Alert,
 } from '@mui/material';
 import {
   CheckCircle as ApproveIcon,
   Cancel as RejectIcon,
   Pending as PendingIcon,
+  Add as AddIcon,
+  Edit as EditIcon,
+  Visibility as ViewIcon,
 } from '@mui/icons-material';
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
 import dayjs from 'dayjs';
-import { dummyLeaveRequests, getEmployeeName, getEmployeeProfileImage } from '../../../../data';
-import DataTable, { TableColumn, StatusChip, formatDate } from '../../../../components/DataTable';
-import { LeaveRequest } from '../../../../model/LeaveRequest';
+import DataTable, { TableColumn, StatusChip, formatDate } from '@/components/DataTable';
+import { LeaveRequest, CreateLeaveRequestRequest, LeaveRequestType, LeaveRequestStatus } from '../../../../types';
+import { LeaveRequestService } from '@/services/leaveRequestService';
+import { EmployeeService } from '@/services/employeeService';
+import { Employee } from '../../../../types';
+import { useAsync } from '../../../../hooks/useAsync';
+import ConfirmationDialog from './ConfirmationDialog';
+import LeaveRequestForm from './LeaveRequestForm';
+import LeaveRequestDetails from './LeaveRequestDetails';
 
 export default function LeaveRequestsPage() {
   const [selectedDate, setSelectedDate] = useState(dayjs()); // Current month
+  const [leaveRequests, setLeaveRequests] = useState<LeaveRequest[]>([]);
+  const [employees, setEmployees] = useState<{ [key: string]: Employee }>({});
+  const [stats, setStats] = useState<{
+    total: number;
+    pending: number;
+    approved: number;
+    rejected: number;
+    totalDays: number;
+  }>({
+    total: 0,
+    pending: 0,
+    approved: 0,
+    rejected: 0,
+    totalDays: 0,
+  });
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  // Dialog states
+  const [confirmDialog, setConfirmDialog] = useState<{
+    open: boolean;
+    action: 'approve' | 'reject' | 'cancel';
+    leaveRequest: LeaveRequest | null;
+  }>({
+    open: false,
+    action: 'approve',
+    leaveRequest: null,
+  });
+
+  const [formDialog, setFormDialog] = useState<{
+    open: boolean;
+    mode: 'create' | 'edit';
+    leaveRequest: LeaveRequest | null;
+  }>({
+    open: false,
+    mode: 'create',
+    leaveRequest: null,
+  });
+
+  const [detailsDialog, setDetailsDialog] = useState<{
+    open: boolean;
+    leaveRequest: LeaveRequest | null;
+  }>({
+    open: false,
+    leaveRequest: null,
+  });
+
+  const [actionLoading, setActionLoading] = useState(false);
+
+  // Load leave requests from API
+  useEffect(() => {
+    loadLeaveRequests();
+  }, [selectedDate]);
+
+  const loadLeaveRequests = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      
+      // Get filtered leave requests by request date month/year
+      const filters = {
+        month: selectedDate.month() + 1, // dayjs months are 0-indexed
+        year: selectedDate.year(),
+      };
+      
+      const [requestsData, statsData] = await Promise.all([
+        LeaveRequestService.getFiltered(filters),
+        LeaveRequestService.getStats(filters),
+      ]);
+      
+      setLeaveRequests(requestsData);
+      setStats(statsData);
+      
+      // Fetch employee details for all unique employee IDs and approver IDs
+      const employeeIds = new Set<string>();
+      requestsData.forEach((request) => {
+        employeeIds.add(request.employeeId);
+        if (request.approvedBy) {
+          employeeIds.add(request.approvedBy);
+        }
+      });
+      
+      // Fetch employee data
+      const employeePromises = Array.from(employeeIds).map(async (id) => {
+        try {
+          const employee = await EmployeeService.getEmployeeById(id);
+          return { id, employee };
+        } catch (error) {
+          console.error(`Error fetching employee ${id}:`, error);
+          return { id, employee: null };
+        }
+      });
+      
+      const employeeResults = await Promise.all(employeePromises);
+      const employeeMap: { [key: string]: Employee } = {};
+      employeeResults.forEach(({ id, employee }) => {
+        if (employee) {
+          employeeMap[id] = employee;
+        }
+      });
+      
+      setEmployees(employeeMap);
+    } catch (err) {
+      console.error('Error loading leave requests:', err);
+      setError('Failed to load leave requests. Please try again.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Handle approve/reject/cancel actions
+  const handleStatusChange = (action: 'approve' | 'reject' | 'cancel', leaveRequest: LeaveRequest) => {
+    setConfirmDialog({
+      open: true,
+      action,
+      leaveRequest,
+    });
+  };
+
+  const handleConfirmAction = async () => {
+    if (!confirmDialog.leaveRequest) return;
+
+    try {
+      setActionLoading(true);
+      const { action, leaveRequest } = confirmDialog;
+      
+      // In a real app, you'd get the current user ID
+      const currentUserId = 'current-user-id'; // Replace with actual user ID
+      
+      let updatedRequest: LeaveRequest;
+      
+      switch (action) {
+        case 'approve':
+          updatedRequest = await LeaveRequestService.approve(leaveRequest.id, currentUserId);
+          break;
+        case 'reject':
+          updatedRequest = await LeaveRequestService.reject(leaveRequest.id, currentUserId);
+          break;
+        case 'cancel':
+          updatedRequest = await LeaveRequestService.cancel(leaveRequest.id);
+          break;
+        default:
+          throw new Error('Invalid action');
+      }
+
+      // Update the local state
+      setLeaveRequests(prev => 
+        prev.map(req => req.id === updatedRequest.id ? updatedRequest : req)
+      );
+      
+      // Refresh stats
+      await loadLeaveRequests();
+      
+      setConfirmDialog({ open: false, action: 'approve', leaveRequest: null });
+    } catch (err) {
+      console.error('Error updating leave request:', err);
+      setError('Failed to update leave request. Please try again.');
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  // Handle form submission
+  const handleFormSubmit = async (data: CreateLeaveRequestRequest | LeaveRequest) => {
+    try {
+      if (formDialog.mode === 'create') {
+        await LeaveRequestService.create(data as CreateLeaveRequestRequest);
+      } else if (formDialog.leaveRequest) {
+        await LeaveRequestService.update(formDialog.leaveRequest.id, data as LeaveRequest);
+      }
+      
+      // Refresh data
+      await loadLeaveRequests();
+      setFormDialog({ open: false, mode: 'create', leaveRequest: null });
+    } catch (err) {
+      console.error('Error saving leave request:', err);
+      throw err; // Let the form handle the error
+    }
+  };
 
   // Filter leave requests by selected month and year and add employee names
   const filteredLeaveRequests = useMemo(() => {
-    return dummyLeaveRequests
-      .filter((leaveRequest) => {
-        const requestDate = dayjs(leaveRequest.requestDate);
-        return (
-          requestDate.month() === selectedDate.month() &&
-          requestDate.year() === selectedDate.year()
-        );
-      })
-      .map((leaveRequest) => ({
+    return leaveRequests.map((leaveRequest) => {
+      const employee = employees[leaveRequest.employeeId];
+      const approver = leaveRequest.approvedBy ? employees[leaveRequest.approvedBy] : null;
+      
+      return {
         ...leaveRequest,
-        employeeName: getEmployeeName(leaveRequest.employeeId) || 'Unknown Employee',
-        employeeProfileImage: getEmployeeProfileImage(leaveRequest.employeeId) || '',
-        approverName: leaveRequest.approvedBy ? getEmployeeName(leaveRequest.approvedBy) : null,
-      }));
-  }, [selectedDate]);
+        employeeName: employee ? `${employee.firstName} ${employee.lastName}` : `Employee ID: ${leaveRequest.employeeId}`,
+        employeeProfileImage: employee?.profileImage || '',
+        approverName: approver ? `${approver.firstName} ${approver.lastName}` : 
+                     leaveRequest.approvedBy ? `Employee ID: ${leaveRequest.approvedBy}` : null,
+      };
+    });
+  }, [leaveRequests, employees]);
 
-  // Calculate summary statistics
+  // Calculate summary statistics (using stats from API)
   const summaryStats = useMemo(() => {
-    const total = filteredLeaveRequests.length;
-    const pending = filteredLeaveRequests.filter(req => req.status === 'pending').length;
-    const approved = filteredLeaveRequests.filter(req => req.status === 'approved').length;
-    const rejected = filteredLeaveRequests.filter(req => req.status === 'rejected').length;
-    const totalDays = filteredLeaveRequests
-      .filter(req => req.status === 'approved')
-      .reduce((sum, req) => sum + req.totalDays, 0);
-
-    return { total, pending, approved, rejected, totalDays };
-  }, [filteredLeaveRequests]);
-
+    return {
+      total: stats.total,
+      pending: stats.pending,
+      approved: stats.approved,
+      rejected: stats.rejected,
+      totalDays: stats.totalDays,
+    };
+  }, [stats]);
   // Get leave type color
-  const getLeaveTypeColor = (type: string) => {
+  const getLeaveTypeColor = (type: LeaveRequestType) => {
     switch (type) {
-      case 'annual': return 'primary';
-      case 'sick': return 'error';
-      case 'personal': return 'info';
-      case 'maternity': return 'secondary';
-      case 'emergency': return 'warning';
+      case LeaveRequestType.ANNUAL: return 'primary';
+      case LeaveRequestType.SICK: return 'error';
+      case LeaveRequestType.PERSONAL: return 'info';
+      case LeaveRequestType.MATERNITY:
+      case LeaveRequestType.PATERNITY: return 'secondary';
+      case LeaveRequestType.EMERGENCY: return 'warning';
+      case LeaveRequestType.BEREAVEMENT: return 'default';
       default: return 'default';
     }
   };
 
-  // Handle approve/reject actions
-  const handleApprove = (leaveRequest: LeaveRequest & { employeeName: string }) => {
-    console.log('Approve leave request:', leaveRequest.id);
-    // In a real app, this would make an API call to update the status
+  const getLeaveTypeDisplay = (type: LeaveRequestType) => {
+    const typeMap = {
+      [LeaveRequestType.ANNUAL]: 'Annual',
+      [LeaveRequestType.SICK]: 'Sick',
+      [LeaveRequestType.PERSONAL]: 'Personal',
+      [LeaveRequestType.MATERNITY]: 'Maternity',
+      [LeaveRequestType.PATERNITY]: 'Paternity',
+      [LeaveRequestType.BEREAVEMENT]: 'Bereavement',
+      [LeaveRequestType.EMERGENCY]: 'Emergency',
+    };
+    return typeMap[type] || type;
   };
 
-  const handleReject = (leaveRequest: LeaveRequest & { employeeName: string }) => {
-    console.log('Reject leave request:', leaveRequest.id);
-    // In a real app, this would make an API call to update the status
+  // Handle view details
+  const handleViewDetails = (leaveRequest: LeaveRequest) => {
+    setDetailsDialog({
+      open: true,
+      leaveRequest,
+    });
+  };
+
+  // Handle edit
+  const handleEdit = (leaveRequest: LeaveRequest) => {
+    setFormDialog({
+      open: true,
+      mode: 'edit',
+      leaveRequest,
+    });
   };
 
   // Define table columns
@@ -96,7 +302,7 @@ export default function LeaveRequestsPage() {
 
         return (
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-            <Avatar sx={{ width: 35, height: 35 }} src={row.employeeProfileImage}>
+            <Avatar sx={{ width: 35, height: 35 }}>
               {initials}
             </Avatar>
             <Box>
@@ -112,12 +318,12 @@ export default function LeaveRequestsPage() {
       },
     },
     {
-      id: 'type',
+      id: 'leaveRequestType',
       label: 'Leave Type',
       format: (value) => (
         <Chip
-          label={value.charAt(0).toUpperCase() + value.slice(1)}
-          color={getLeaveTypeColor(value)}
+          label={getLeaveTypeDisplay(value as LeaveRequestType)}
+          color={getLeaveTypeColor(value as LeaveRequestType)}
           size="small"
           variant="outlined"
         />
@@ -126,7 +332,7 @@ export default function LeaveRequestsPage() {
     {
       id: 'requestDate',
       label: 'Request Date',
-      format: (value) => formatDate(value),
+      format: (value) => formatDate(value as string),
     },
     {
       id: 'period',
@@ -155,22 +361,23 @@ export default function LeaveRequestsPage() {
             textOverflow: 'ellipsis',
             whiteSpace: 'nowrap'
           }}
-          title={value}
+          title={value as string}
         >
-          {value}
+          {value as string}
         </Typography>
       ),
     },
     {
-      id: 'status',
+      id: 'leaveRequestStatus',
       label: 'Status',
       format: (value) => (
         <StatusChip
-          status={value}
+          status={(value as string).toLowerCase()}
           colorMap={{
             pending: 'warning',
             approved: 'success',
             rejected: 'error',
+            cancelled: 'default',
           }}
         />
       ),
@@ -189,14 +396,33 @@ export default function LeaveRequestsPage() {
       label: 'Actions',
       align: 'center',
       format: (value, row) => (
-        <Box>
-          {row.status === 'pending' && (
+        <Box sx={{ display: 'flex', gap: 0.5 }}>
+          <Tooltip title="View Details">
+            <IconButton 
+              size="small" 
+              color="info"
+              onClick={() => handleViewDetails(row)}
+            >
+              <ViewIcon fontSize="small" />
+            </IconButton>
+          </Tooltip>
+          
+          {row.leaveRequestStatus === LeaveRequestStatus.PENDING && (
             <>
+              <Tooltip title="Edit Request">
+                <IconButton 
+                  size="small" 
+                  color="primary"
+                  onClick={() => handleEdit(row)}
+                >
+                  <EditIcon fontSize="small" />
+                </IconButton>
+              </Tooltip>
               <Tooltip title="Approve Request">
                 <IconButton 
                   size="small" 
                   color="success"
-                  onClick={() => handleApprove(row)}
+                  onClick={() => handleStatusChange('approve', row)}
                 >
                   <ApproveIcon fontSize="small" />
                 </IconButton>
@@ -205,16 +431,16 @@ export default function LeaveRequestsPage() {
                 <IconButton 
                   size="small" 
                   color="error"
-                  onClick={() => handleReject(row)}
+                  onClick={() => handleStatusChange('reject', row)}
                 >
                   <RejectIcon fontSize="small" />
                 </IconButton>
               </Tooltip>
             </>
           )}
-          {row.status !== 'pending' && (
+          {row.leaveRequestStatus !== LeaveRequestStatus.PENDING && row.leaveRequestStatus !== LeaveRequestStatus.CANCELLED && (
             <Typography variant="caption" color="text.secondary">
-              {row.status === 'approved' ? 'Approved' : 'Rejected'}
+              {row.leaveRequestStatus === LeaveRequestStatus.APPROVED ? 'Approved' : 'Rejected'}
             </Typography>
           )}
         </Box>
@@ -225,6 +451,13 @@ export default function LeaveRequestsPage() {
   return (
     <LocalizationProvider dateAdapter={AdapterDayjs}>
       <Box>
+        {/* Error Alert */}
+        {error && (
+          <Alert severity="error" sx={{ mb: 2 }} onClose={() => setError(null)}>
+            {error}
+          </Alert>
+        )}
+
         {/* Page Header with Date Filter */}
         <Box
           sx={{
@@ -243,111 +476,154 @@ export default function LeaveRequestsPage() {
             </Typography>
           </Box>
 
-          {/* Month/Year Picker */}
-          <Box sx={{ minWidth: 200 }}>
-            <DatePicker
-              label="Select Month/Year"
-              value={selectedDate}
-              onChange={(newValue) => newValue && setSelectedDate(newValue)}
-              views={['year', 'month']}
-              slotProps={{
-                textField: {
-                  size: 'small',
-                  fullWidth: true,
-                },
-              }}
-            />
+          <Box sx={{ display: 'flex', gap: 2, alignItems: 'center' }}>
+            {/* Add Leave Request Button */}
+            <Button
+              variant="contained"
+              startIcon={<AddIcon />}
+              onClick={() => setFormDialog({ open: true, mode: 'create', leaveRequest: null })}
+            >
+              Add Request
+            </Button>
+
+            {/* Month/Year Picker */}
+            <Box sx={{ minWidth: 200 }}>
+              <DatePicker
+                label="Filter by Request Month/Year"
+                value={selectedDate}
+                onChange={(newValue) => newValue && setSelectedDate(newValue)}
+                views={['year', 'month']}
+                slotProps={{
+                  textField: {
+                    size: 'small',
+                    fullWidth: true,
+                  },
+                }}
+              />
+            </Box>
           </Box>
         </Box>
 
-        {/* Summary Statistics */}
-        <Grid container spacing={2} sx={{ mb: 3 }}>
-          <Grid size={{xs: 12, sm: 6, md: 3}}>
-            <Paper sx={{ p: 2, textAlign: 'center' }}>
-              <Typography variant="h6" color="primary">
-                {summaryStats.total}
-              </Typography>
-              <Typography variant="body2" color="text.secondary">
-                Total Requests
-              </Typography>
-            </Paper>
-          </Grid>
-          <Grid size={{xs: 12, sm: 6, md: 3}}>
-            <Paper sx={{ p: 2, textAlign: 'center' }}>
-              <Typography variant="h6" color="warning.main">
-                {summaryStats.pending}
-              </Typography>
-              <Typography variant="body2" color="text.secondary">
-                Pending
-              </Typography>
-            </Paper>
-          </Grid>
-          <Grid size={{xs: 12, sm: 6, md: 3}}>
-            <Paper sx={{ p: 2, textAlign: 'center' }}>
-              <Typography variant="h6" color="success.main">
-                {summaryStats.approved}
-              </Typography>
-              <Typography variant="body2" color="text.secondary">
-                Approved
-              </Typography>
-            </Paper>
-          </Grid>
-          <Grid size={{xs: 12, sm: 6, md: 3}}>
-            <Paper sx={{ p: 2, textAlign: 'center' }}>
-              <Typography variant="h6" color="error.main">
-                {summaryStats.rejected}
-              </Typography>
-              <Typography variant="body2" color="text.secondary">
-                Rejected
-              </Typography>
-            </Paper>
-          </Grid>
-        </Grid>
+        {loading ? (
+          <Box sx={{ display: 'flex', justifyContent: 'center', py: 4 }}>
+            <CircularProgress />
+          </Box>
+        ) : (
+          <>
+            {/* Summary Statistics */}
+            <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr', md: '1fr 1fr 1fr 1fr' }, gap: 2, mb: 3 }}>
+              <Paper sx={{ p: 2, textAlign: 'center' }}>
+                <Typography variant="h6" color="primary">
+                  {summaryStats.total}
+                </Typography>
+                <Typography variant="body2" color="text.secondary">
+                  Total Requests
+                </Typography>
+              </Paper>
+              <Paper sx={{ p: 2, textAlign: 'center' }}>
+                <Typography variant="h6" color="warning.main">
+                  {summaryStats.pending}
+                </Typography>
+                <Typography variant="body2" color="text.secondary">
+                  Pending
+                </Typography>
+              </Paper>
+              <Paper sx={{ p: 2, textAlign: 'center' }}>
+                <Typography variant="h6" color="success.main">
+                  {summaryStats.approved}
+                </Typography>
+                <Typography variant="body2" color="text.secondary">
+                  Approved
+                </Typography>
+              </Paper>
+              <Paper sx={{ p: 2, textAlign: 'center' }}>
+                <Typography variant="h6" color="error.main">
+                  {summaryStats.rejected}
+                </Typography>
+                <Typography variant="body2" color="text.secondary">
+                  Rejected
+                </Typography>
+              </Paper>
+            </Box>
 
-        {/* Additional Stats Row */}
-        <Grid container spacing={2} sx={{ mb: 3 }}>
-          <Grid size={{xs: 12, sm: 6}}>
-            <Paper sx={{ p: 2, textAlign: 'center' }}>
-              <Typography variant="h6" color="info.main">
-                {summaryStats.totalDays}
-              </Typography>
-              <Typography variant="body2" color="text.secondary">
-                Total Approved Days
-              </Typography>
-            </Paper>
-          </Grid>
-          <Grid size={{xs: 12, sm: 6}}>
-            <Paper sx={{ p: 2, textAlign: 'center' }}>
-              <Typography variant="h6" color="secondary.main">
-                {summaryStats.approved > 0 ? (summaryStats.totalDays / summaryStats.approved).toFixed(1) : 0}
-              </Typography>
-              <Typography variant="body2" color="text.secondary">
-                Avg Days per Request
-              </Typography>
-            </Paper>
-          </Grid>
-        </Grid>
+            {/* Additional Stats Row */}
+            <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr' }, gap: 2, mb: 3 }}>
+              <Paper sx={{ p: 2, textAlign: 'center' }}>
+                <Typography variant="h6" color="info.main">
+                  {summaryStats.totalDays}
+                </Typography>
+                <Typography variant="body2" color="text.secondary">
+                  Total Approved Days
+                </Typography>
+              </Paper>
+              <Paper sx={{ p: 2, textAlign: 'center' }}>
+                <Typography variant="h6" color="secondary.main">
+                  {summaryStats.approved > 0 ? (summaryStats.totalDays / summaryStats.approved).toFixed(1) : 0}
+                </Typography>
+                <Typography variant="body2" color="text.secondary">
+                  Avg Days per Request
+                </Typography>
+              </Paper>
+            </Box>
 
-        {/* Leave Requests Table */}
-        <DataTable
-          columns={columns}
-          data={filteredLeaveRequests}
-          searchPlaceholder="Search leave requests by employee name or reason..."
-          searchFields={['employeeName', 'reason', 'type']}
-          getRowId={(row) => row.id}
-          emptyMessage={`No leave requests found for ${selectedDate.format('MMMM YYYY')}`}
-          defaultRowsPerPage={10}
-          rowsPerPageOptions={[5, 10, 15, 25]}
+            {/* Leave Requests Table */}
+            <DataTable
+              columns={columns}
+              data={filteredLeaveRequests}
+              searchPlaceholder="Search leave requests by employee name or reason..."
+              searchFields={['employeeName', 'reason', 'leaveRequestType']}
+              getRowId={(row) => row.id}
+              emptyMessage={`No leave requests found for ${selectedDate.format('MMMM YYYY')} (by request date)`}
+              defaultRowsPerPage={10}
+              rowsPerPageOptions={[5, 10, 15, 25]}
+            />
+
+            {/* Additional Info */}
+            <Box sx={{ mt: 2 }}>
+              <Typography variant="caption" color="text.secondary">
+                Showing leave requests for {selectedDate.format('MMMM YYYY')} (filtered by request date) • 
+                Approval rate: {summaryStats.total > 0 ? ((summaryStats.approved / summaryStats.total) * 100).toFixed(1) : 0}% • 
+                Pending requests require action
+              </Typography>
+            </Box>
+          </>
+        )}
+
+        {/* Confirmation Dialog */}
+        <ConfirmationDialog
+          open={confirmDialog.open}
+          onClose={() => setConfirmDialog({ open: false, action: 'approve', leaveRequest: null })}
+          onConfirm={handleConfirmAction}
+          action={confirmDialog.action}
+          leaveRequestId={confirmDialog.leaveRequest?.id || ''}
+          employeeName={confirmDialog.leaveRequest ? 
+            `Employee ID: ${confirmDialog.leaveRequest.employeeId}` 
+            : ''}
+          loading={actionLoading}
         />
 
-        {/* Additional Info */}
-        <Box sx={{ mt: 2 }}>
-          <Typography variant="caption" color="text.secondary">
-            Showing leave requests for {selectedDate.format('MMMM YYYY')} • 
-            Approval rate: {summaryStats.total > 0 ? ((summaryStats.approved / summaryStats.total) * 100).toFixed(1) : 0}% • 
-            Pending requests require action
-          </Typography>
-        </Box>
+        {/* Form Dialog */}
+        <LeaveRequestForm
+          open={formDialog.open}
+          onClose={() => setFormDialog({ open: false, mode: 'create', leaveRequest: null })}
+          onSubmit={handleFormSubmit}
+          leaveRequest={formDialog.leaveRequest}
+          mode={formDialog.mode}
+        />
+
+        {/* Details Dialog */}
+        <LeaveRequestDetails
+          open={detailsDialog.open}
+          onClose={() => setDetailsDialog({ open: false, leaveRequest: null })}
+          leaveRequest={detailsDialog.leaveRequest}
+          onEdit={() => {
+            if (detailsDialog.leaveRequest) {
+              setDetailsDialog({ open: false, leaveRequest: null });
+              setFormDialog({ open: true, mode: 'edit', leaveRequest: detailsDialog.leaveRequest });
+            }
+          }}
+          canEdit={detailsDialog.leaveRequest?.leaveRequestStatus === LeaveRequestStatus.PENDING}
+        />
       </Box>
     </LocalizationProvider>
   );
