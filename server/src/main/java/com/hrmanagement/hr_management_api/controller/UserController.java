@@ -7,6 +7,9 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import jakarta.servlet.http.Cookie;
+import jakarta.servlet.http.HttpServletResponse;
+
 import com.hrmanagement.hr_management_api.model.entity.User;
 import com.hrmanagement.hr_management_api.model.enums.UserRole;
 import com.hrmanagement.hr_management_api.repository.UserRepository;
@@ -433,6 +436,97 @@ public class UserController {
         } catch (Exception e) {
             ApiResponse response = new ApiResponse(false, "Error in bulk delete: " + e.getMessage(), null);
             return ResponseEntity.badRequest().body(response);
+        }
+    }
+
+    // Simple login method that returns employee ID in cookie
+    @PostMapping("/login")
+    public ResponseEntity<ApiResponse> login(@RequestBody LoginRequest loginRequest, HttpServletResponse response) {
+        try {
+            Optional<User> userOptional = userRepository.findByUsernameAndIsDeletedFalse(loginRequest.getUsername());
+            
+            if (userOptional.isEmpty()) {
+                ApiResponse apiResponse = new ApiResponse(false, "Invalid username or password", null);
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(apiResponse);
+            }
+            
+            User user = userOptional.get();
+            
+            // Simple password check (in production, use proper password hashing)
+            if (!user.getPassword().equals(loginRequest.getPassword())) {
+                ApiResponse apiResponse = new ApiResponse(false, "Invalid username or password", null);
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(apiResponse);
+            }
+            
+            // Check if user is active
+            if (!user.isActive()) {
+                ApiResponse apiResponse = new ApiResponse(false, "User account is inactive", null);
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(apiResponse);
+            }
+            
+            // Create cookie with employee ID
+            Cookie employeeIdCookie = new Cookie("employeeId", user.getEmployeeId());
+            employeeIdCookie.setMaxAge(24 * 60 * 60); // 24 hours
+            employeeIdCookie.setPath("/");
+            employeeIdCookie.setHttpOnly(true);
+            response.addCookie(employeeIdCookie);
+            
+            // Return success response with user info (without password)
+            User userResponse = new User();
+            userResponse.setId(user.getId());
+            userResponse.setUsername(user.getUsername());
+            userResponse.setEmployeeId(user.getEmployeeId());
+            userResponse.setUserRole(user.getUserRole());
+            userResponse.setActive(user.isActive());
+            userResponse.setDeleted(user.isDeleted());
+            
+            ApiResponse apiResponse = new ApiResponse(true, "Login successful", userResponse);
+            return ResponseEntity.ok(apiResponse);
+            
+        } catch (Exception e) {
+            ApiResponse apiResponse = new ApiResponse(false, "Login error: " + e.getMessage(), null);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(apiResponse);
+        }
+    }
+
+    // Logout method to clear cookie
+    @PostMapping("/logout")
+    public ResponseEntity<ApiResponse> logout(HttpServletResponse response) {
+        try {
+            // Clear the employee ID cookie
+            Cookie employeeIdCookie = new Cookie("employeeId", null);
+            employeeIdCookie.setMaxAge(0);
+            employeeIdCookie.setPath("/");
+            response.addCookie(employeeIdCookie);
+            
+            ApiResponse apiResponse = new ApiResponse(true, "Logout successful", null);
+            return ResponseEntity.ok(apiResponse);
+            
+        } catch (Exception e) {
+            ApiResponse apiResponse = new ApiResponse(false, "Logout error: " + e.getMessage(), null);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(apiResponse);
+        }
+    }
+
+    // DTO class for login request
+    public static class LoginRequest {
+        private String username;
+        private String password;
+
+        public String getUsername() {
+            return username;
+        }
+
+        public void setUsername(String username) {
+            this.username = username;
+        }
+
+        public String getPassword() {
+            return password;
+        }
+
+        public void setPassword(String password) {
+            this.password = password;
         }
     }
 

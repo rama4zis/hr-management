@@ -179,6 +179,7 @@ public class LeaveRequest extends BaseEntity {
         this.employee = employee;
     }
 
+    @JsonIgnore
     public Employee getApprover() {
         return approver;
     }

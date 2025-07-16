@@ -162,18 +162,19 @@ export default function LeaveRequestsPage() {
     try {
       setActionLoading(true);
       const { action, leaveRequest } = confirmDialog;
-      
-      // In a real app, you'd get the current user ID
-      const currentUserId = 'current-user-id'; // Replace with actual user ID
-      
+      // Get approver employeeId from localStorage via authService
+      const { authService } = await import('@/services/authService');
+      const currentEmployeeId = authService.getCurrentEmployeeId();
+      if (!currentEmployeeId && (action === 'approve' || action === 'reject')) {
+        throw new Error('No approver employee ID found. Please log in again.');
+      }
       let updatedRequest: LeaveRequest;
-      
       switch (action) {
         case 'approve':
-          updatedRequest = await LeaveRequestService.approve(leaveRequest.id, currentUserId);
+          updatedRequest = await LeaveRequestService.approve(leaveRequest.id, currentEmployeeId!);
           break;
         case 'reject':
-          updatedRequest = await LeaveRequestService.reject(leaveRequest.id, currentUserId);
+          updatedRequest = await LeaveRequestService.reject(leaveRequest.id, currentEmployeeId!);
           break;
         case 'cancel':
           updatedRequest = await LeaveRequestService.cancel(leaveRequest.id);
