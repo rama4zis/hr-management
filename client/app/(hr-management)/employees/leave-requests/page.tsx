@@ -597,7 +597,9 @@ export default function LeaveRequestsPage() {
           action={confirmDialog.action}
           leaveRequestId={confirmDialog.leaveRequest?.id || ''}
           employeeName={confirmDialog.leaveRequest ? 
-            `Employee ID: ${confirmDialog.leaveRequest.employeeId}` 
+            (employees[confirmDialog.leaveRequest.employeeId] 
+              ? `${employees[confirmDialog.leaveRequest.employeeId].firstName} ${employees[confirmDialog.leaveRequest.employeeId].lastName}`
+              : `Employee ID: ${confirmDialog.leaveRequest.employeeId}`)
             : ''}
           loading={actionLoading}
         />

@@ -14,7 +14,6 @@ import {
   InputLabel,
   Select,
   MenuItem,
-  Grid,
   Alert,
   CircularProgress,
   Autocomplete,
@@ -130,7 +129,7 @@ export default function LeaveRequestForm({
     const newErrors: Record<string, string> = {};
 
     if (!formData.employeeId.trim()) {
-      newErrors.employeeId = 'Employee ID is required';
+      newErrors.employeeId = 'Employee selection is required';
     }
 
     if (!formData.leaveRequestType) {
@@ -217,86 +216,132 @@ export default function LeaveRequestForm({
         </DialogTitle>
         <DialogContent>
           <Box sx={{ mt: 2 }}>
-            <Grid container spacing={2}>
-              <Grid size={{ xs: 12, sm: 6 }}>
-                <TextField
-                  fullWidth
-                  label="Employee ID"
-                  value={formData.employeeId}
-                  onChange={(e) => setFormData({ ...formData, employeeId: e.target.value })}
-                  error={!!errors.employeeId}
-                  helperText={errors.employeeId}
-                  disabled={mode === 'edit'}
-                />
-              </Grid>
-              <Grid size={{ xs: 12, sm: 6 }}>
-                <FormControl fullWidth error={!!errors.leaveRequestType}>
-                  <InputLabel>Leave Type</InputLabel>
-                  <Select
-                    value={formData.leaveRequestType}
-                    label="Leave Type"
-                    onChange={(e) => setFormData({ 
-                      ...formData, 
-                      leaveRequestType: e.target.value as LeaveRequestType
-                    })}
-                  >
-                    {leaveTypes.map((type) => (
-                      <MenuItem key={type.value} value={type.value}>
-                        {type.label} (Max: {type.maxDays} days)
-                      </MenuItem>
-                    ))}
-                  </Select>
-                  {errors.leaveRequestType && (
-                    <Typography variant="caption" color="error" sx={{ ml: 2, mt: 0.5 }}>
-                      {errors.leaveRequestType}
-                    </Typography>
-                  )}
-                </FormControl>
-              </Grid>
-              <Grid size={{ xs: 12, sm: 6 }}>
-                <DatePicker
-                  label="Start Date"
-                  value={formData.startDate}
-                  onChange={(newValue) => setFormData({ ...formData, startDate: newValue })}
-                  slotProps={{
-                    textField: {
-                      fullWidth: true,
-                      error: !!errors.startDate,
-                      helperText: errors.startDate,
-                    },
-                  }}
-                  minDate={dayjs()}
-                />
-              </Grid>
-              <Grid size={{ xs: 12, sm: 6 }}>
-                <DatePicker
-                  label="End Date"
-                  value={formData.endDate}
-                  onChange={(newValue) => setFormData({ ...formData, endDate: newValue })}
-                  slotProps={{
-                    textField: {
-                      fullWidth: true,
-                      error: !!errors.endDate,
-                      helperText: errors.endDate,
-                    },
-                  }}
-                  minDate={formData.startDate || dayjs()}
-                />
-              </Grid>
-              <Grid size={{ xs: 12 }}>
-                <TextField
-                  fullWidth
-                  label="Reason"
-                  multiline
-                  rows={3}
-                  value={formData.reason}
-                  onChange={(e) => setFormData({ ...formData, reason: e.target.value })}
-                  error={!!errors.reason}
-                  helperText={errors.reason}
-                  placeholder="Please provide a detailed reason for your leave request..."
-                />
-              </Grid>
-            </Grid>
+            <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr' }, gap: 2 }}>
+              <Autocomplete
+                options={employees} // Limit to 5 options
+                getOptionLabel={(option) => `${option.firstName} ${option.lastName}`}
+                value={selectedEmployee}
+                onChange={(event, newValue) => {
+                  setSelectedEmployee(newValue);
+                  setFormData({ 
+                    ...formData, 
+                    employeeId: newValue ? newValue.id : '' 
+                  });
+                }}
+                filterOptions={(options, { inputValue }) => {
+                  if (!inputValue) return options.slice(0, 5);
+                  
+                  const filtered = options.filter(option => {
+                    const fullName = `${option.firstName} ${option.lastName}`.toLowerCase();
+                    const employeeId = option.id.toLowerCase();
+                    const search = inputValue.toLowerCase();
+                    
+                    return fullName.includes(search) || employeeId.includes(search);
+                  });
+                  
+                  return filtered.slice(0, 5); // Limit to 5 results
+                }}
+                renderOption={(props, option) => (
+                  <Box component="li" {...props} key={option.id}>
+                    <Box>
+                      <Typography variant="body2">
+                        {option.firstName} {option.lastName}
+                      </Typography>
+                      <Typography variant="caption" color="text.secondary">
+                        ID: {option.id} • Dept: {option.departmentId || 'No Department'}
+                      </Typography>
+                    </Box>
+                  </Box>
+                )}
+                renderInput={(params) => (
+                  <TextField
+                    {...params}
+                    label="Select Employee"
+                    placeholder="Search by name or ID..."
+                    error={!!errors.employeeId}
+                    helperText={errors.employeeId}
+                    disabled={mode === 'edit'}
+                    InputProps={{
+                      ...params.InputProps,
+                      endAdornment: (
+                        <>
+                          {employeesLoading ? <CircularProgress size={20} /> : null}
+                          {params.InputProps.endAdornment}
+                        </>
+                      ),
+                    }}
+                  />
+                )}
+                loading={employeesLoading}
+                disabled={mode === 'edit'}
+                isOptionEqualToValue={(option, value) => option.id === value?.id}
+              />
+              <FormControl fullWidth error={!!errors.leaveRequestType}>
+                <InputLabel>Leave Type</InputLabel>
+                <Select
+                  value={formData.leaveRequestType}
+                  label="Leave Type"
+                  onChange={(e) => setFormData({ 
+                    ...formData, 
+                    leaveRequestType: e.target.value as LeaveRequestType
+                  })}
+                >
+                  {leaveTypes.map((type) => (
+                    <MenuItem key={type.value} value={type.value}>
+                      {type.label} (Max: {type.maxDays} days)
+                    </MenuItem>
+                  ))}
+                </Select>
+                {errors.leaveRequestType && (
+                  <Typography variant="caption" color="error" sx={{ ml: 2, mt: 0.5 }}>
+                    {errors.leaveRequestType}
+                  </Typography>
+                )}
+              </FormControl>
+            </Box>
+            
+            <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr' }, gap: 2, mt: 2 }}>
+              <DatePicker
+                label="Start Date"
+                value={formData.startDate}
+                onChange={(newValue) => setFormData({ ...formData, startDate: newValue })}
+                slotProps={{
+                  textField: {
+                    fullWidth: true,
+                    error: !!errors.startDate,
+                    helperText: errors.startDate,
+                  },
+                }}
+                minDate={dayjs()}
+              />
+              <DatePicker
+                label="End Date"
+                value={formData.endDate}
+                onChange={(newValue) => setFormData({ ...formData, endDate: newValue })}
+                slotProps={{
+                  textField: {
+                    fullWidth: true,
+                    error: !!errors.endDate,
+                    helperText: errors.endDate,
+                  },
+                }}
+                minDate={formData.startDate || dayjs()}
+              />
+            </Box>
+            
+            <Box sx={{ mt: 2 }}>
+              <TextField
+                fullWidth
+                label="Reason"
+                multiline
+                rows={3}
+                value={formData.reason}
+                onChange={(e) => setFormData({ ...formData, reason: e.target.value })}
+                error={!!errors.reason}
+                helperText={errors.reason}
+                placeholder="Please provide a detailed reason for your leave request..."
+              />
+            </Box>
 
             {/* Summary */}
             {totalDays > 0 && (
@@ -304,6 +349,11 @@ export default function LeaveRequestForm({
                 <Typography variant="subtitle2" gutterBottom>
                   Leave Request Summary
                 </Typography>
+                {selectedEmployee && (
+                  <Typography variant="body2" color="text.secondary">
+                    <strong>Employee:</strong> {selectedEmployee.firstName} {selectedEmployee.lastName}
+                  </Typography>
+                )}
                 <Typography variant="body2" color="text.secondary">
                   <strong>Total Days:</strong> {totalDays} days
                 </Typography>

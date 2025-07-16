@@ -92,7 +92,7 @@ export default function ConfirmationDialog({
         <DialogContentText>
           {config.message}
         </DialogContentText>
-        <Box sx={{ mt: 2, p: 2, bgcolor: 'grey.50', borderRadius: 1 }}>
+        <Box sx={{ mt: 2, p: 2, borderRadius: 1 }}>
           <Typography variant="body2" color="text.secondary">
             <strong>Request ID:</strong> {leaveRequestId}
           </Typography>

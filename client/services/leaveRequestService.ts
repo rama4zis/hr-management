@@ -151,7 +151,7 @@ export class LeaveRequestService {
 
   // Create new leave request
   static async create(leaveRequestData: CreateLeaveRequestRequest): Promise<LeaveRequest> {
-    const response = await ApiClient.post<LeaveRequest>(this.BASE_URL, leaveRequestData);
+    const response = await ApiClient.post<LeaveRequest>(`${this.BASE_URL}/`, leaveRequestData);
     return response.data;
   }
 
