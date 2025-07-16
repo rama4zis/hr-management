@@ -5,7 +5,6 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
-import java.util.UUID;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -290,10 +289,7 @@ public class PayrollController {
                         .body(new ApiResponse(false, "Payroll already exists for this employee and pay period", null));
             }
 
-            // Set default values
-            if (payroll.getId() == null || payroll.getId().isEmpty()) {
-                payroll.setId(UUID.randomUUID().toString());
-            }
+            // Set default values (don't set ID manually - let Hibernate generate it)
             if (payroll.getPayrollStatus() == null) {
                 payroll.setPayrollStatus(PayrollStatus.DRAFT);
             }
@@ -596,10 +592,7 @@ public class PayrollController {
                     continue; // Skip duplicates
                 }
 
-                // Set default values
-                if (payroll.getId() == null || payroll.getId().isEmpty()) {
-                    payroll.setId(UUID.randomUUID().toString());
-                }
+                // Set default values (don't set ID manually - let Hibernate generate it)
                 if (payroll.getPayrollStatus() == null) {
                     payroll.setPayrollStatus(PayrollStatus.DRAFT);
                 }

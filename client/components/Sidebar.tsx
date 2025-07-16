@@ -57,12 +57,12 @@ const Sidebar = () => {
           </ListItemIcon>
           <ListItemText primary="Leave Requests" />
         </ListItemButton>
-        {/* <ListItemButton component={Link} href="/employees/payroll">
+        <ListItemButton component={Link} href="/employees/payroll">
           <ListItemIcon>
             <Payment />
           </ListItemIcon>
           <ListItemText primary="Payroll" />
-        </ListItemButton> */}
+        </ListItemButton>
       </List>
       <Divider />
       {/* <nav aria-label="secondary mailbox folders">
